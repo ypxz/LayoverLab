@@ -1,0 +1,76 @@
+# ── Private agent/orchestration docs (local only, not for public repo) ──
+AGENTS.md
+docs/DEVIN_PROMPTS.md
+docs/TASKS.md
+PROGRESS.md
+
+# ── Secrets & environment ─────────────────────────────────────────
+# Never commit real credentials. Only the template is tracked.
+.env
+.env.*
+!.env.example
+*.env.local
+secrets/
+credentials*.json
+service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+!**/testdata/**/*.pem
+.netrc
+.npmrc
+.pypirc
+token.txt
+*.token
+
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ── Node / Next.js ────────────────────────────────────────────────
+node_modules/
+web/.next/
+web/out/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+web/coverage/
+web/test-results/
+web/playwright-report/
+
+# ── Data, caches & runtime artifacts ─────────────────────────────
+server/.cache/
+.cache/
+*.sqlite3
+*.sqlite
+*.db
+*.db-wal
+*.db-shm
+*.log
+logs/
+tmp/
+
+# ── OS / IDE ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*~

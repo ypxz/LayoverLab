@@ -1,0 +1,67 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: layover
+      POSTGRES_PASSWORD: layover
+      POSTGRES_DB: layoverlab
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U layover -d layoverlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./server
+    command: sh -c "alembic upgrade head && uvicorn layoverlab.api.app:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      DATABASE_URL: postgresql+psycopg://layover:layover@db:5432/layoverlab
+      API_CORS_ORIGINS: http://localhost:3000
+      TRAVELPAYOUTS_TOKEN: ${TRAVELPAYOUTS_TOKEN:-}
+      GF_ENABLED: ${GF_ENABLED:-false}
+      CRAWL_ENABLED: ${CRAWL_ENABLED:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: ./server
+    command: python -m layoverlab.crawler.run
+    environment:
+      DATABASE_URL: postgresql+psycopg://layover:layover@db:5432/layoverlab
+      TRAVELPAYOUTS_TOKEN: ${TRAVELPAYOUTS_TOKEN:-}
+      GF_ENABLED: ${GF_ENABLED:-false}
+      CRAWL_ENABLED: ${CRAWL_ENABLED:-true}
+      CRAWL_MIN_INTERVAL_S: ${CRAWL_MIN_INTERVAL_S:-2.0}
+    volumes:
+      - ./server:/app
+      - httpcache:/app/.cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    command: npm run dev
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - webmodules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  httpcache:
+  webmodules:
