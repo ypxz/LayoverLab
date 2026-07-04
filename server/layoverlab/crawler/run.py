@@ -9,6 +9,7 @@ import logging
 from sqlalchemy import func, select
 
 from layoverlab.connectors.base import load_default_connectors
+from layoverlab.connectors.coverage import log_disabled_sources
 from layoverlab.crawler.service import claim_next_job, run_job
 from layoverlab.db.models import CrawlJob, utcnow
 from layoverlab.db.session import session_scope
@@ -50,6 +51,7 @@ async def refresh_stale_jobs() -> None:
 
 async def main() -> None:
     load_default_connectors()
+    log_disabled_sources()
     settings = get_settings()
     if not settings.crawl_enabled:
         log.warning("CRAWL_ENABLED=false — worker idle (jobs stay queued)")
