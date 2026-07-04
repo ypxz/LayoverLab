@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     amadeus_client_secret: str = ""
     wizz_enabled: bool = True
     easyjet_enabled: bool = True
+    fixture_connector: bool = False
 
     api_cors_origins: str = "http://localhost:3000"
 

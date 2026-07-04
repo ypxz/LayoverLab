@@ -61,3 +61,9 @@ def load_default_connectors() -> None:
         travelpayouts,
         wizzair,
     )
+    from layoverlab.settings import get_settings
+
+    if get_settings().fixture_connector and "fixture" not in _REGISTRY:
+        from layoverlab.connectors.fixture import FixtureConnector
+
+        register(FixtureConnector())
