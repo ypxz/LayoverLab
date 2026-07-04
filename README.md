@@ -90,6 +90,7 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `HTTP_CACHE_DIR` | `.cache/http` | On-disk response cache (avoids duplicate hits) |
 | `TRAVELPAYOUTS_TOKEN` | *(empty = disabled)* | Free token → all-airline cached fares ([travelpayouts.com](https://www.travelpayouts.com)) |
 | `GF_ENABLED` | `false` | Google Flights verification connector (stub) |
+| `FIXTURE_CONNECTOR` | `false` | Deterministic synthetic fare connector for tests and the local fixture stack |
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `NEXT_PUBLIC_API_BASE` | `http://localhost:8000/api` | API base URL for the web app |
@@ -101,7 +102,20 @@ cd server && pytest -q       # 20 tests: engine scenarios, connectors (recorded 
 cd web && npm test           # vitest: SSE parser, formatting
 ```
 
-CI (`.github/workflows/ci.yml`) runs ruff + pytest + vitest + `next build` on every push/PR.
+CI (`.github/workflows/ci.yml`) runs ruff + pytest + vitest + `next build` on every push/PR, plus the route-matrix harness against a fixture stack.
+
+### Route-matrix harness
+
+Exercises a matrix of route classes (LCC intra-EU, cluster pair, ground corridor, long-haul, domestic, island, round trip, stopover-beats-direct) against a running API and prints a markdown report (sample: [`docs/route_matrix_report.sample.md`](docs/route_matrix_report.sample.md)).
+
+```bash
+cd server
+export DATABASE_URL="sqlite:///layoverlab.sqlite3" FIXTURE_CONNECTOR=true CRAWL_ENABLED=false
+alembic upgrade head
+uvicorn layoverlab.api.app:app --port 8000 &          # fixture stack
+python scripts/route_matrix.py --fixture --month 2026-09   # seeds DB, asserts baselines, exit code for CI
+python scripts/route_matrix.py --live                       # real connectors, low volume, observations only
+```
 
 ## Project layout
 
@@ -114,7 +128,7 @@ server/
     db/           SQLAlchemy models, session, Alembic migrations
     engine/       fare-slice graph, top-K search, round-trips, warnings, live verification
     seeds/        airports/clusters/ground-corridors/routes loaders + curated CSVs
-  scripts/        crawl_once.py (manual smoke crawl)
+  scripts/        crawl_once.py (manual smoke crawl), route_matrix.py (route-class QA harness)
   tests/
 web/
   src/app/        pages: search+results (SSE streaming), /r/[id] permalinks

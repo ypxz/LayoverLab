@@ -20,6 +20,41 @@ jobs:
       - name: Test
         run: pytest server/tests -q
 
+  route-matrix:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:///layoverlab.sqlite3
+      FIXTURE_CONNECTOR: "true"
+      CRAWL_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e "server[dev]"
+      - name: Migrate
+        run: alembic upgrade head
+        working-directory: server
+      - name: Start fixture API
+        run: |
+          nohup python -m uvicorn layoverlab.api.app:app --port 8000 > uvicorn.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/api/health && break
+            sleep 1
+          done
+        working-directory: server
+      - name: Route matrix (fixture mode)
+        run: python scripts/route_matrix.py --fixture --out route_matrix_report.md
+        working-directory: server
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: route-matrix-report
+          path: server/route_matrix_report.md
+          if-no-files-found: ignore
+
   web:
     runs-on: ubuntu-latest
     steps:
