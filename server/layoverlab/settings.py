@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     travelpayouts_token: str = ""
     gf_enabled: bool = False
+    fixture_connector: bool = False
 
     api_cors_origins: str = "http://localhost:3000"
 
