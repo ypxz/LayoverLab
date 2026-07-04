@@ -19,8 +19,6 @@ jobs:
         run: ruff check server
       - name: Test
         run: pytest server/tests -q
-        env:
-          CRAWL_ENABLED: "false"
 
   web:
     runs-on: ubuntu-latest
