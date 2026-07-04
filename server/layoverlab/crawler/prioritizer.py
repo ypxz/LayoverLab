@@ -6,13 +6,16 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from layoverlab.crawler.coverage import bump_demand
 from layoverlab.db.models import Airport, CrawlJob, Route, utcnow
 
 log = logging.getLogger(__name__)
 
 CONNECTORS_FOR_BULK = ["ryanair", "travelpayouts"]
-MAX_HUBS = 15
+MAX_HUBS = 8
 MAX_JOBS_PER_SEARCH = 200
+PRIORITY_DIRECT = 100
+PRIORITY_HUB = 30
 
 
 def _months_in_window(date_from: date, date_to: date) -> list[date]:
@@ -101,12 +104,14 @@ def enqueue_for_search(session: Session, origin: str, dest: str, date_from: date
     for month in months:
         for o in origins:
             for d in dests:
-                add(o, d, month, priority=100)  # direct pair(s): highest priority
+                add(o, d, month, priority=PRIORITY_DIRECT)  # direct pair(s): highest priority
+                for connector in CONNECTORS_FOR_BULK:
+                    bump_demand(session, o, d, month, connector)
         for hub in hubs:
             for o in origins:
-                add(o, hub, month, priority=50)  # origin -> hub
+                add(o, hub, month, priority=PRIORITY_HUB)  # origin -> hub
             for d in dests:
-                add(hub, d, month, priority=50)  # hub -> dest
+                add(hub, d, month, priority=PRIORITY_HUB)  # hub -> dest
     session.flush()
     log.info("enqueued %d new jobs for %s->%s (%d hubs)", created, origin, dest, len(hubs))
     return created
