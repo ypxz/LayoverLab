@@ -10,10 +10,16 @@ class Settings(BaseSettings):
 
     crawl_enabled: bool = True
     crawl_min_interval_s: float = 2.0
+    crawl_breaker_cooldown_s: float = 300.0
     http_cache_dir: str = ".cache/http"
 
     travelpayouts_token: str = ""
     gf_enabled: bool = False
+    tequila_api_key: str = ""
+    amadeus_client_id: str = ""
+    amadeus_client_secret: str = ""
+    wizz_enabled: bool = True
+    easyjet_enabled: bool = True
 
     api_cors_origins: str = "http://localhost:3000"
 

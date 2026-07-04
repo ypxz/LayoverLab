@@ -6,6 +6,7 @@ import sys
 from datetime import date
 
 from layoverlab.connectors.base import ConnectorDisabled, all_connectors, load_default_connectors
+from layoverlab.connectors.coverage import enabled_sources
 from layoverlab.crawler.service import upsert_fares
 from layoverlab.db.session import session_scope
 
@@ -21,24 +22,35 @@ async def main() -> None:
     month = date.fromisoformat(sys.argv[3] + "-01")
 
     load_default_connectors()
+    counts: dict[str, str] = {}
     for name, connector in all_connectors().items():
         try:
             fares = await connector.fetch_month(origin, dest, month)
         except ConnectorDisabled as exc:
             log.info("%s: disabled (%s)", name, exc)
+            counts[name] = f"disabled ({exc})"
             continue
         except Exception as exc:  # noqa: BLE001
             log.warning("%s: failed (%s)", name, exc)
+            counts[name] = f"failed ({exc})"
             continue
         with session_scope() as session:
             n = upsert_fares(session, fares, source=name)
         log.info("%s: %d fares stored", name, n)
+        counts[name] = f"{n} fares"
         if fares:
             cheapest = min(fares, key=lambda f: f["price_cents"])
             log.info(
                 "%s cheapest: %s %.2f %s", name, cheapest["dep_date"],
                 cheapest["price_cents"] / 100, cheapest["currency"],
             )
+
+    log.info("--- per-connector fare counts for %s->%s %s ---", origin, dest, month.strftime("%Y-%m"))
+    statuses = enabled_sources()
+    for name in sorted(counts):
+        status = statuses.get(name)
+        flags = f"bulk={status['bulk']}" if status else ""
+        log.info("  %-14s %-30s %s", name, counts[name], flags)
 
 
 if __name__ == "__main__":

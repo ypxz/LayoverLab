@@ -52,4 +52,12 @@ def all_connectors() -> dict[str, Connector]:
 
 def load_default_connectors() -> None:
     """Import connector modules for their registration side effects."""
-    from layoverlab.connectors import google_flights, ryanair, travelpayouts  # noqa: F401
+    from layoverlab.connectors import (  # noqa: F401
+        amadeus,
+        easyjet,
+        google_flights,
+        kiwi_tequila,
+        ryanair,
+        travelpayouts,
+        wizzair,
+    )
