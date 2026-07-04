@@ -6,12 +6,12 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from layoverlab.connectors.coverage import bulk_sources, sources_for_route
 from layoverlab.crawler.coverage import bump_demand
 from layoverlab.db.models import Airport, CrawlJob, Route, utcnow
 
 log = logging.getLogger(__name__)
 
-CONNECTORS_FOR_BULK = ["ryanair", "travelpayouts"]
 MAX_HUBS = 8
 MAX_JOBS_PER_SEARCH = 200
 PRIORITY_DIRECT = 100
@@ -91,12 +91,15 @@ def enqueue_for_search(session: Session, origin: str, dest: str, date_from: date
 
     created = 0
     budget = MAX_JOBS_PER_SEARCH
+    bulk = set(bulk_sources())
 
     def add(o: str, d: str, month: date, priority: int) -> None:
         nonlocal created, budget
         if budget <= 0 or o == d:
             return
-        for connector in CONNECTORS_FOR_BULK:
+        for connector in sources_for_route(session, o, d):
+            if connector not in bulk:
+                continue
             if _upsert_job(session, connector, o, d, month, priority):
                 created += 1
             budget -= 1
@@ -105,7 +108,7 @@ def enqueue_for_search(session: Session, origin: str, dest: str, date_from: date
         for o in origins:
             for d in dests:
                 add(o, d, month, priority=PRIORITY_DIRECT)  # direct pair(s): highest priority
-                for connector in CONNECTORS_FOR_BULK:
+                for connector in sorted(bulk):
                     bump_demand(session, o, d, month, connector)
         for hub in hubs:
             for o in origins:

@@ -15,6 +15,7 @@ AVIASALES_BASE = "https://www.aviasales.com"
 
 class TravelpayoutsConnector:
     name = "travelpayouts"
+    bulk = True
 
     def __init__(self, client: PoliteClient | None = None) -> None:
         self.client = client or PoliteClient(cache_ttl_s=12 * 3600)

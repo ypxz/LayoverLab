@@ -13,8 +13,8 @@ import asyncio
 import logging
 
 from layoverlab.connectors.base import load_default_connectors
+from layoverlab.connectors.coverage import bulk_sources, log_disabled_sources
 from layoverlab.crawler.budget import allowed_connectors, domain_for_connector
-from layoverlab.crawler.prioritizer import CONNECTORS_FOR_BULK
 from layoverlab.crawler.scheduler import enqueue_refresh_jobs
 from layoverlab.crawler.service import claim_next_job, run_job
 from layoverlab.db.session import get_engine, session_scope
@@ -28,7 +28,7 @@ IDLE_SLEEP_S = 5.0
 
 def _domain_groups() -> list[list[str]]:
     groups: dict[str, list[str]] = {}
-    for connector in CONNECTORS_FOR_BULK:
+    for connector in bulk_sources():
         groups.setdefault(domain_for_connector(connector), []).append(connector)
     return list(groups.values())
 
@@ -36,7 +36,7 @@ def _domain_groups() -> list[list[str]]:
 async def process_one(connectors: list[str] | None = None) -> bool:
     """Claim and run a single job. Returns False when nothing is claimable."""
     with session_scope() as session:
-        candidates = connectors if connectors is not None else list(CONNECTORS_FOR_BULK)
+        candidates = connectors if connectors is not None else bulk_sources()
         allowed = allowed_connectors(session, candidates)
         if not allowed:
             return False
@@ -77,6 +77,7 @@ async def _scheduler_tick_loop() -> None:
 
 async def main() -> None:
     load_default_connectors()
+    log_disabled_sources()
     settings = get_settings()
     if not settings.crawl_enabled:
         log.warning("CRAWL_ENABLED=false — worker idle (jobs stay queued)")
