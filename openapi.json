@@ -1,0 +1,553 @@
+{
+  "components": {
+    "schemas": {
+      "AirportOut": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "iata": {
+            "title": "Iata",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "iata",
+          "name",
+          "city",
+          "country_code"
+        ],
+        "title": "AirportOut",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Itinerary": {
+        "properties": {
+          "currency": {
+            "default": "EUR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/Leg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "stopovers": {
+            "items": {
+              "$ref": "#/components/schemas/Stopover"
+            },
+            "title": "Stopovers",
+            "type": "array"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "legs",
+          "total_cents",
+          "stopovers",
+          "warnings"
+        ],
+        "title": "Itinerary",
+        "type": "object"
+      },
+      "ItineraryId": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "ItineraryId",
+        "type": "object"
+      },
+      "Leg": {
+        "properties": {
+          "currency": {
+            "default": "EUR",
+            "title": "Currency",
+            "type": "string"
+          },
+          "deep_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Link"
+          },
+          "dep_date": {
+            "format": "date",
+            "title": "Dep Date",
+            "type": "string"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "fetched_at": {
+            "format": "date-time",
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "price_cents": {
+            "title": "Price Cents",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "origin",
+          "dest",
+          "dep_date",
+          "mode",
+          "price_cents",
+          "source",
+          "fetched_at"
+        ],
+        "title": "Leg",
+        "type": "object"
+      },
+      "SearchParams": {
+        "properties": {
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "dest": {
+            "title": "Dest",
+            "type": "string"
+          },
+          "max_stops": {
+            "default": 3,
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Stops",
+            "type": "integer"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "round_trip": {
+            "default": false,
+            "title": "Round Trip",
+            "type": "boolean"
+          },
+          "stop_max_days": {
+            "default": 7,
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Stop Max Days",
+            "type": "integer"
+          },
+          "stop_min_hours": {
+            "default": 4,
+            "maximum": 336.0,
+            "minimum": 0.0,
+            "title": "Stop Min Hours",
+            "type": "integer"
+          },
+          "top_k": {
+            "default": 10,
+            "maximum": 25.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "type": "integer"
+          },
+          "trip_max_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trip Max Days"
+          },
+          "trip_min_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trip Min Days"
+          }
+        },
+        "required": [
+          "origin",
+          "dest",
+          "date_from",
+          "date_to"
+        ],
+        "title": "SearchParams",
+        "type": "object"
+      },
+      "Stopover": {
+        "properties": {
+          "iata": {
+            "title": "Iata",
+            "type": "string"
+          },
+          "nights": {
+            "title": "Nights",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "iata",
+          "nights"
+        ],
+        "title": "Stopover",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Creative cheapest-route flight finder: cached candidates, live verification, streaming updates.",
+    "title": "LayoverLab API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/airports": {
+      "get": {
+        "operationId": "airports_api_airports_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AirportOut"
+                  },
+                  "title": "Response Airports Api Airports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Airports",
+        "tags": [
+          "airports"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Health Api Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/api/itineraries": {
+      "post": {
+        "operationId": "save_itinerary_api_itineraries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Itinerary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItineraryId"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Itinerary",
+        "tags": [
+          "itineraries"
+        ]
+      }
+    },
+    "/api/r/{itinerary_id}": {
+      "get": {
+        "operationId": "get_itinerary_api_r__itinerary_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "itinerary_id",
+            "required": true,
+            "schema": {
+              "title": "Itinerary Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Itinerary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Itinerary",
+        "tags": [
+          "itineraries"
+        ]
+      }
+    },
+    "/api/search": {
+      "post": {
+        "description": "SSE stream: `candidates` -> `verified` -> zero or more `update` -> `done`.",
+        "operationId": "search_endpoint_api_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchParams",
+                "examples": [
+                  {
+                    "date_from": "2026-08-01",
+                    "date_to": "2026-08-31",
+                    "dest": "ALC",
+                    "max_stops": 3,
+                    "origin": "BER",
+                    "round_trip": false,
+                    "top_k": 10
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Streaming cheapest-route search",
+        "tags": [
+          "search"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Streaming route search (SSE).",
+      "name": "search"
+    },
+    {
+      "description": "Airport autocomplete.",
+      "name": "airports"
+    },
+    {
+      "description": "Itinerary permalinks.",
+      "name": "itineraries"
+    },
+    {
+      "description": "Health and operational endpoints.",
+      "name": "ops"
+    }
+  ]
+}

@@ -20,6 +20,19 @@ class Settings(BaseSettings):
     # engine defaults
     fare_ttl_hours: int = 48
 
+    # streaming search
+    search_stream_max_s: int = 60
+    search_stream_poll_s: float = 5.0
+
+    # rate limiting
+    rate_limit_enabled: bool = True
+    rate_search_per_min: int = 10
+    rate_default_per_min: int = 60
+
+    # admin + metrics
+    admin_token: str = ""
+    metrics_enabled: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:

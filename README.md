@@ -92,6 +92,13 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `GF_ENABLED` | `false` | Google Flights verification connector (stub) |
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
+| `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
+| `SEARCH_STREAM_POLL_S` | `5.0` | Poll interval while waiting for a cold route's fares to land |
+| `RATE_LIMIT_ENABLED` | `true` | In-process per-IP rate limiting (429 + `Retry-After`) |
+| `RATE_SEARCH_PER_MIN` | `10` | `/api/search` requests per minute per client IP |
+| `RATE_DEFAULT_PER_MIN` | `60` | All other endpoints, per minute per client IP |
+| `ADMIN_TOKEN` | *(empty = disabled)* | Enables `/api/admin/*` (guarded by `X-Admin-Token`; 404 when unset) |
+| `METRICS_ENABLED` | `true` | Prometheus metrics at `/api/metrics` |
 | `NEXT_PUBLIC_API_BASE` | `http://localhost:8000/api` | API base URL for the web app |
 
 ## Tests
