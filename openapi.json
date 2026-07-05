@@ -115,6 +115,18 @@
       },
       "Leg": {
         "properties": {
+          "arr_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arr Time"
+          },
           "currency": {
             "default": "EUR",
             "title": "Currency",
@@ -135,6 +147,18 @@
             "format": "date",
             "title": "Dep Date",
             "type": "string"
+          },
+          "dep_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dep Time"
           },
           "dest": {
             "title": "Dest",

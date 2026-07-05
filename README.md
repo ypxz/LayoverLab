@@ -97,10 +97,13 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` | *(empty = disabled)* | Amadeus Self-Service free test quota — exact verification prices ([developers.amadeus.com](https://developers.amadeus.com)) |
 | `WIZZ_ENABLED` | `true` | Wizz Air public timetable connector (no key) |
 | `EASYJET_ENABLED` | `true` | easyJet lowest-daily-fares connector (no key) |
-| `GF_ENABLED` | `false` | Google Flights verification connector (stub) |
+| `GF_ENABLED` | `false` | Google Flights verification connector — real times + prices for top candidates |
+| `GF_MIN_INTERVAL_S` | `5.0` | Extra minimum seconds between Google Flights requests (on top of `CRAWL_MIN_INTERVAL_S`) |
 | `FIXTURE_CONNECTOR` | `false` | Deterministic synthetic fare connector for tests and the local fixture stack |
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
 | `ROUTES_SOURCE` | `openflights` | Route-topology seed source: `openflights` (stale 2014 hub prior) or `jonty` (fresher [airline-route-data](https://github.com/Jonty/airline-route-data)) |
+| `VERIFY_TOP_K` | `5` | Max itineraries live-verified per search |
+| `SELF_TRANSFER_MIN_H` | `3.0` | Minimum connection gap (hours) when real times are known; tighter itineraries are dropped from verified results |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
 | `SEARCH_STREAM_POLL_S` | `5.0` | Poll interval while waiting for a cold route's fares to land |
