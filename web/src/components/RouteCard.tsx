@@ -99,7 +99,7 @@ export default function RouteCard({ itin, rank, flash = false }: Props) {
               <TooltipContent>{STR.card.cachedTooltip}</TooltipContent>
             </Tooltip>
           )}
-          <span className="text-xl font-bold text-emerald-400">
+          <span data-testid="route-total" className="text-xl font-bold text-emerald-400">
             {formatMoney(itin.total_cents, itin.currency)}
           </span>
         </div>

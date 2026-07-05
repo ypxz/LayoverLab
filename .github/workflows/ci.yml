@@ -17,8 +17,24 @@ jobs:
         run: pip install -e "server[dev]"
       - name: Lint
         run: ruff check server
-      - name: Test
-        run: pytest server/tests -q
+      - name: Test (with coverage)
+        run: pytest server/tests -q --cov=layoverlab --cov-report=term --cov-report=xml:server-coverage.xml | tee pytest-cov.txt
+      - name: Coverage summary
+        if: always()
+        run: |
+          {
+            echo "### Server coverage"
+            echo '```'
+            grep -E "^(TOTAL|Name|-+)" pytest-cov.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server-coverage.xml
+          if-no-files-found: ignore
       - name: OpenAPI schema up to date
         run: |
           python server/scripts/export_openapi.py
@@ -78,9 +94,25 @@ jobs:
       - name: Install
         run: npm install
         working-directory: web
-      - name: Test
-        run: npm test
+      - name: Test (with coverage)
+        run: npm test -- --coverage
         working-directory: web
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f web/coverage/coverage-summary.json ]; then
+            {
+              echo "### Web coverage"
+              node -e 'const t=require("./web/coverage/coverage-summary.json").total; for (const k of ["lines","statements","functions","branches"]) console.log(`- ${k}: ${t[k].pct}%`);'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-coverage
+          path: web/coverage
+          if-no-files-found: ignore
       - name: Build
         run: npm run build
         working-directory: web

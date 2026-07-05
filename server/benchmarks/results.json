@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-07-05T01:06:42+00:00",
+  "python": "3.12.10",
+  "platform": "Linux-5.15.200-x86_64-with-glibc2.35",
+  "seed": 1337,
+  "sizes": [
+    {
+      "fares": 10000,
+      "searches": 20,
+      "p50_ms": 45.0,
+      "p95_ms": 55.2,
+      "max_ms": 67.7,
+      "mean_results": 0.2,
+      "peak_rss_mb": 82.1
+    },
+    {
+      "fares": 50000,
+      "searches": 20,
+      "p50_ms": 540.1,
+      "p95_ms": 591.3,
+      "max_ms": 604.6,
+      "mean_results": 7.5,
+      "peak_rss_mb": 194.4
+    },
+    {
+      "fares": 200000,
+      "searches": 20,
+      "p50_ms": 1477.7,
+      "p95_ms": 1621.1,
+      "max_ms": 1648.4,
+      "mean_results": 10,
+      "peak_rss_mb": 611.9
+    }
+  ]
+}
