@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     crawl_min_interval_s: float = 2.0
     crawl_breaker_cooldown_s: float = 300.0
     http_cache_dir: str = ".cache/http"
+    crawl_daily_budget: int = 500
+    sched_tick_s: int = 60
+    crawler_concurrency: int = 2
 
     travelpayouts_token: str = ""
     gf_enabled: bool = False

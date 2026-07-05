@@ -89,6 +89,9 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `CRAWL_MIN_INTERVAL_S` | `2.0` | Per-domain minimum seconds between requests |
 | `CRAWL_BREAKER_COOLDOWN_S` | `300` | Per-domain circuit breaker cooldown before a half-open probe |
 | `HTTP_CACHE_DIR` | `.cache/http` | On-disk response cache (avoids duplicate hits) |
+| `CRAWL_DAILY_BUDGET` | `500` | Max outbound requests per domain per UTC day; exhausted domains pause until midnight UTC |
+| `SCHED_TICK_S` | `60` | Seconds between refresh-scheduler ticks in the crawler worker |
+| `CRAWLER_CONCURRENCY` | `2` | Parallel job coroutines in the worker (Postgres only; SQLite runs 1) |
 | `TRAVELPAYOUTS_TOKEN` | *(empty = disabled)* | Free token → all-airline cached fares ([travelpayouts.com](https://www.travelpayouts.com), ~5-minute signup, biggest coverage win) |
 | `TEQUILA_API_KEY` | *(empty = disabled)* | Kiwi Tequila free tier — all airlines + self-transfer pricing ([tequila.kiwi.com](https://tequila.kiwi.com)) |
 | `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` | *(empty = disabled)* | Amadeus Self-Service free test quota — exact verification prices ([developers.amadeus.com](https://developers.amadeus.com)) |
