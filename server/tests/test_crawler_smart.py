@@ -28,6 +28,7 @@ D = date(2026, 8, 1)
 @pytest.fixture()
 def registry():
     saved = dict(connectors_base._REGISTRY)
+    connectors_base._REGISTRY.clear()
     yield connectors_base._REGISTRY
     connectors_base._REGISTRY.clear()
     connectors_base._REGISTRY.update(saved)
@@ -36,6 +37,7 @@ def registry():
 class FakeConnector:
     def __init__(self, name: str, latency_s: float = 0.0, fail: Exception | None = None):
         self.name = name
+        self.bulk = True
         self.latency_s = latency_s
         self.fail = fail
         self.calls: list[tuple[str, str]] = []
