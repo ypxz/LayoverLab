@@ -19,6 +19,19 @@ jobs:
         run: ruff check server
       - name: Test
         run: pytest server/tests -q
+      - name: OpenAPI schema up to date
+        run: |
+          python server/scripts/export_openapi.py
+          git diff --exit-code openapi.json
+
+  prod-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build server prod image
+        run: docker build -f server/Dockerfile.prod server
+      - name: Build web prod image
+        run: docker build -f web/Dockerfile.prod web
 
   route-matrix:
     runs-on: ubuntu-latest
