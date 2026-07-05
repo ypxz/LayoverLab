@@ -1,6 +1,8 @@
+import logging
 import random
 from datetime import date, datetime, timedelta, timezone
 
+from layoverlab.db.models import Fare
 from layoverlab.engine.models import Itinerary, Leg, SearchParams
 from layoverlab.engine.search import _pair_round_trips, search
 from tests.conftest import add_airport, add_fare, add_ground
@@ -183,6 +185,50 @@ def test_round_trip_index_matches_brute_force():
             (c.total_cents, c.legs[0].dep_date, c.legs[-1].dep_date) for c in combos
         )
         assert got == _brute_force(outbound, inbound, trip_min, trip_max)
+
+
+def _add_raw_fare(
+    session, origin, dest, dep, cents, *, expires_at=None, currency="EUR", source="ryanair"
+):
+    session.add(
+        Fare(
+            origin=origin, dest=dest, dep_date=dep, source=source,
+            min_price_cents=cents, currency=currency, deep_link=None,
+            fetched_at=NOW, expires_at=expires_at or NOW + timedelta(hours=48),
+        )
+    )
+    session.flush()
+
+
+def test_expired_fares_excluded_from_graph(session):
+    add_airport(session, "AAA")
+    add_airport(session, "BBB")
+    _add_raw_fare(session, "AAA", "BBB", D, 1000, expires_at=NOW - timedelta(hours=1))
+    _add_raw_fare(session, "AAA", "BBB", D, 5000, source="travelpayouts")
+    results = search(_params(origin="AAA", dest="BBB"), session)
+
+    assert results
+    assert results[0].total_cents == 5000
+
+
+def test_expired_only_fare_yields_no_results(session):
+    add_airport(session, "AAA")
+    add_airport(session, "BBB")
+    _add_raw_fare(session, "AAA", "BBB", D, 1000, expires_at=NOW - timedelta(hours=1))
+    assert search(_params(origin="AAA", dest="BBB"), session) == []
+
+
+def test_non_eur_fares_skipped(session, caplog):
+    add_airport(session, "AAA")
+    add_airport(session, "BBB")
+    _add_raw_fare(session, "AAA", "BBB", D, 900, currency="GBP")
+    _add_raw_fare(session, "AAA", "BBB", D, 5000, source="travelpayouts")
+    with caplog.at_level(logging.WARNING, logger="layoverlab.engine.graph"):
+        results = search(_params(origin="AAA", dest="BBB"), session)
+
+    assert results
+    assert results[0].total_cents == 5000
+    assert any("non-EUR" in rec.message for rec in caplog.records)
 
 
 def test_ground_corridor_ground_first_still_works(session):
