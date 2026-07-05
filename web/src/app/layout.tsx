@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "LayoverLab — creative cheapest routes",
@@ -9,9 +11,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
-        <div className="mx-auto max-w-5xl px-4 py-8">{children}</div>
+        <TooltipProvider delayDuration={200}>
+          <div className="mx-auto max-w-5xl px-4 py-8">{children}</div>
+        </TooltipProvider>
+        <Toaster theme="dark" position="bottom-center" />
       </body>
     </html>
   );

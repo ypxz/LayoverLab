@@ -9,3 +9,63 @@ body {
   background-repeat: no-repeat;
   min-height: 100vh;
 }
+
+@layer base {
+  :root,
+  .dark {
+    /* Dark travel-hacker theme: slate-950 base, emerald accent. */
+    --background: 229 84% 5%; /* slate-950 */
+    --foreground: 210 40% 98%; /* slate-50 */
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 60% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 160 84% 39%; /* emerald-500 */
+    --primary-foreground: 229 84% 5%;
+    --secondary: 217 33% 17%; /* slate-800 */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%; /* slate-400 */
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 215 25% 27%; /* slate-700 */
+    --ring: 160 84% 39%;
+    --chart-1: 160 84% 39%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 239 84% 67%;
+    --chart-4: 43 96% 56%;
+    --chart-5: 0 84% 60%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes price-flash {
+    0% {
+      background-color: hsl(160 84% 39% / 0.35);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  .animate-price-flash {
+    animation: price-flash 1.2s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-price-flash {
+      animation: none;
+    }
+  }
+}

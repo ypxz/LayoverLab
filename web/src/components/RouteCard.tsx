@@ -1,18 +1,14 @@
 "use client";
 
-import {
-  BadgeCheck,
-  Clock,
-  ExternalLink,
-  Moon,
-  Plane,
-  Share2,
-  ShieldAlert,
-  TrainFront,
-} from "lucide-react";
+import { BadgeCheck, ChevronDown, Clock, Moon, Plane, Share2, TrainFront } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import RouteDetail from "@/components/RouteDetail";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { saveItinerary, type Itinerary, type Leg } from "@/lib/api";
 import { formatDate, formatMoney, freshness } from "@/lib/format";
+import { STR } from "@/lib/strings";
+import { cn } from "@/lib/utils";
 
 function LegSegment({ leg }: { leg: Leg }) {
   const Icon = leg.mode === "flight" ? Plane : TrainFront;
@@ -32,9 +28,14 @@ function LegSegment({ leg }: { leg: Leg }) {
   );
 }
 
-export default function RouteCard({ itin, rank }: { itin: Itinerary; rank: number }) {
+interface Props {
+  itin: Itinerary;
+  rank: number;
+  flash?: boolean;
+}
+
+export default function RouteCard({ itin, rank, flash = false }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
   const nights = itin.stopovers.reduce((acc, s) => acc + s.nights, 0);
 
   async function share() {
@@ -42,10 +43,9 @@ export default function RouteCard({ itin, rank }: { itin: Itinerary; rank: numbe
       const id = itin.id ?? (await saveItinerary(itin));
       const url = `${window.location.origin}/r/${id}`;
       await navigator.clipboard.writeText(url);
-      setShareState("copied");
-      setTimeout(() => setShareState("idle"), 2000);
+      toast.success(STR.card.shareCopied);
     } catch {
-      setShareState("error");
+      toast.error(STR.card.shareError);
     }
   }
 
@@ -55,7 +55,13 @@ export default function RouteCard({ itin, rank }: { itin: Itinerary; rank: numbe
   );
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700">
+    <div
+      data-testid="result-card"
+      className={cn(
+        "rounded-2xl border border-slate-800 bg-slate-900/60 p-4 transition hover:border-slate-700",
+        flash && "animate-price-flash",
+      )}
+    >
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-xs font-semibold text-slate-500">#{rank}</span>
         <div className="flex flex-wrap items-center gap-4">
@@ -77,16 +83,21 @@ export default function RouteCard({ itin, rank }: { itin: Itinerary; rank: numbe
         </div>
         <div className="ml-auto flex items-center gap-3">
           {itin.verified ? (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-300">
-              <BadgeCheck size={12} /> verified now
+            <span
+              data-testid="verified-badge"
+              className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-300"
+            >
+              <BadgeCheck size={12} /> {STR.card.verifiedNow}
             </span>
           ) : (
-            <span
-              className="flex items-center gap-1 rounded-full bg-slate-700/40 px-2 py-1 text-[11px] font-medium text-slate-400"
-              title="Prices from the fare cache — verify before booking"
-            >
-              <Clock size={12} /> cached {oldestFetch ? freshness(oldestFetch) : ""}
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex cursor-default items-center gap-1 rounded-full bg-slate-700/40 px-2 py-1 text-[11px] font-medium text-slate-400">
+                  <Clock size={12} /> {STR.card.cached} {oldestFetch ? freshness(oldestFetch) : ""}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{STR.card.cachedTooltip}</TooltipContent>
+            </Tooltip>
           )}
           <span className="text-xl font-bold text-emerald-400">
             {formatMoney(itin.total_cents, itin.currency)}
@@ -96,49 +107,32 @@ export default function RouteCard({ itin, rank }: { itin: Itinerary; rank: numbe
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
         <span>
-          {itin.legs.length} leg{itin.legs.length > 1 ? "s" : ""}
-          {nights > 0 ? ` · ${nights} stopover night${nights > 1 ? "s" : ""}` : " · direct-ish"}
+          {STR.card.legs(itin.legs.length)}
+          {nights > 0 ? ` · ${STR.card.stopoverNights(nights)}` : ` · ${STR.card.directIsh}`}
+          {itin.warnings.length > 0 ? ` · ${STR.card.notes(itin.warnings.length)}` : ""}
         </span>
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800"
+          aria-expanded={expanded}
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <ShieldAlert size={12} />
-          {itin.warnings.length} note{itin.warnings.length !== 1 ? "s" : ""}
+          <ChevronDown size={12} className={cn("transition-transform", expanded && "rotate-180")} />
+          {expanded ? STR.card.hideDetails : STR.card.details}
         </button>
         <button
+          data-testid="share-button"
           onClick={share}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Share2 size={12} />
-          {shareState === "copied" ? "link copied!" : shareState === "error" ? "failed" : "share"}
+          {STR.card.share}
         </button>
-        <div className="ml-auto flex gap-2">
-          {itin.legs
-            .filter((leg) => leg.deep_link)
-            .map((leg, i) => (
-              <a
-                key={i}
-                href={leg.deep_link!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 rounded-lg bg-slate-800 px-2.5 py-1.5 text-[11px] font-medium text-slate-200 hover:bg-slate-700"
-              >
-                book {leg.origin}→{leg.dest} <ExternalLink size={10} />
-              </a>
-            ))}
-        </div>
       </div>
 
       {expanded && (
-        <ul className="mt-3 space-y-1.5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          {itin.warnings.map((w, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-amber-200/90">
-              <ShieldAlert size={12} className="mt-0.5 shrink-0 text-amber-400" />
-              {w}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4 border-t border-slate-800 pt-4">
+          <RouteDetail itin={itin} />
+        </div>
       )}
     </div>
   );
