@@ -1,6 +1,7 @@
 """Engine data contracts (frozen, see docs/CONTRACTS.md)."""
 
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -17,6 +18,7 @@ class SearchParams(BaseModel):
     stop_max_days: int = Field(default=7, ge=0, le=30)
     max_stops: int = Field(default=3, ge=0, le=5)
     top_k: int = Field(default=10, ge=1, le=25)
+    sort: Literal["cheapest", "fastest", "best"] = "cheapest"
 
     @field_validator("origin", "dest")
     @classmethod

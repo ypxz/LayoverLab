@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # engine defaults
     fare_ttl_hours: int = 48
     verify_top_k: int = 5
+    engine_night_cost_cents: int = 1500
     self_transfer_min_h: float = 3.0
 
     # streaming search
