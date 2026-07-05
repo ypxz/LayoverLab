@@ -29,6 +29,7 @@ class Airport(Base):
     country_code: Mapped[str] = mapped_column(String(2), index=True)
     lat: Mapped[float] = mapped_column(Float)
     lon: Mapped[float] = mapped_column(Float)
+    tz: Mapped[str | None] = mapped_column(Text, nullable=True)
     cluster_id: Mapped[str | None] = mapped_column(
         ForeignKey("airport_clusters.id"), nullable=True, index=True
     )
