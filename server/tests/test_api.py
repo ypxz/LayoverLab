@@ -41,7 +41,18 @@ def client(session, monkeypatch):
 
 
 def test_health(client):
-    assert client.get("/api/health").json() == {"status": "ok"}
+    body = client.get("/api/health").json()
+    assert body["status"] == "ok"
+    assert body["worker"] == {"alive": False, "last_heartbeat_age_s": None}
+
+
+def test_health_reports_worker_heartbeat(client, session):
+    from layoverlab.crawler.heartbeat import beat
+
+    beat(session)
+    body = client.get("/api/health").json()
+    assert body["worker"]["alive"] is True
+    assert body["worker"]["last_heartbeat_age_s"] is not None
 
 
 def test_airports_autocomplete_prefers_exact_iata(client, session):
@@ -51,15 +62,79 @@ def test_airports_autocomplete_prefers_exact_iata(client, session):
     assert body[0]["iata"] == "BER"
 
 
-def test_search_sse_event_order(client):
-    payload = {"origin": "BER", "dest": "ALC", "date_from": "2026-08-01", "date_to": "2026-08-31"}
+def _stream_events(client, payload=None):
+    payload = payload or {
+        "origin": "BER", "dest": "ALC", "date_from": "2026-08-01", "date_to": "2026-08-31",
+    }
+    events: list[tuple[str, str]] = []
     with client.stream("POST", "/api/search", json=payload) as resp:
         assert resp.status_code == 200
-        events = []
+        event = None
         for line in resp.iter_lines():
             if line.startswith("event:"):
-                events.append(line.split(":", 1)[1].strip())
+                event = line.split(":", 1)[1].strip()
+            elif line.startswith("data:") and event is not None:
+                events.append((event, line.split(":", 1)[1].strip()))
+    return events
+
+
+def _done_meta(events) -> dict:
+    return json.loads(dict(events)["done"])["meta"]
+
+
+def test_search_sse_event_order(client):
+    events = [e for e, _ in _stream_events(client)]
     assert events == ["candidates", "verified", "done"]
+
+
+def test_done_meta_with_results_has_no_zero_reason(client, monkeypatch):
+    monkeypatch.setattr(routes_module, "_worker_alive", lambda: True)
+    meta = _done_meta(_stream_events(client))
+    assert meta["zero_results_reason"] is None
+    assert meta["worker_alive"] is True
+    assert meta["crawl_pending"] is False
+
+
+def test_done_meta_zero_results_no_coverage(client, monkeypatch):
+    monkeypatch.setattr(routes_module, "_run_search", lambda params: [])
+    monkeypatch.setattr(routes_module, "_pair_cache_fresh", lambda params: True)
+    monkeypatch.setattr(routes_module, "_pair_sources_erroring", lambda params: False)
+    monkeypatch.setattr(routes_module, "_worker_alive", lambda: True)
+    meta = _done_meta(_stream_events(client))
+    assert meta["zero_results_reason"] == "no_coverage"
+
+
+def test_done_meta_zero_results_worker_down(client, monkeypatch):
+    monkeypatch.setattr(routes_module, "_run_search", lambda params: [])
+    monkeypatch.setattr(routes_module, "_pair_cache_fresh", lambda params: True)
+    monkeypatch.setattr(routes_module, "_worker_alive", lambda: False)
+    meta = _done_meta(_stream_events(client))
+    assert meta["zero_results_reason"] == "worker_down"
+    assert meta["worker_alive"] is False
+
+
+def test_done_meta_zero_results_sources_erroring(client, monkeypatch):
+    monkeypatch.setattr(routes_module, "_run_search", lambda params: [])
+    monkeypatch.setattr(routes_module, "_pair_cache_fresh", lambda params: True)
+    monkeypatch.setattr(routes_module, "_pair_sources_erroring", lambda params: True)
+    monkeypatch.setattr(routes_module, "_worker_alive", lambda: True)
+    meta = _done_meta(_stream_events(client))
+    assert meta["zero_results_reason"] == "sources_erroring"
+
+
+def test_done_meta_zero_results_crawl_disabled(client, monkeypatch):
+    from layoverlab.settings import get_settings
+
+    monkeypatch.setenv("CRAWL_ENABLED", "false")
+    get_settings.cache_clear()
+    try:
+        monkeypatch.setattr(routes_module, "_run_search", lambda params: [])
+        monkeypatch.setattr(routes_module, "_pair_cache_fresh", lambda params: True)
+        monkeypatch.setattr(routes_module, "_worker_alive", lambda: True)
+        meta = _done_meta(_stream_events(client))
+        assert meta["zero_results_reason"] == "crawl_disabled"
+    finally:
+        get_settings.cache_clear()
 
 
 def test_itinerary_permalink_roundtrip(client):

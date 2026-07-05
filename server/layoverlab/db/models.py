@@ -121,6 +121,13 @@ class RequestBudget(Base):
     used: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeats"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)  # e.g. "crawler"
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class ItinerarySnapshot(Base):
     __tablename__ = "itineraries"
 

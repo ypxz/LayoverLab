@@ -47,12 +47,19 @@ Deep dives: [`docs/PLAN.md`](docs/PLAN.md) (architecture decisions) · [`docs/CO
 cp .env.example .env               # optionally add TRAVELPAYOUTS_TOKEN (free)
 docker compose up --build
 # db  -> localhost:5433 | api -> http://localhost:8000/api/health | web -> http://localhost:3000
-
-docker compose exec api python -m layoverlab.seeds.load_all         # seed airports/clusters/routes (once)
-docker compose exec api python scripts/crawl_once.py BER ALC 2026-08  # fill some real fares
 ```
 
-Open http://localhost:3000, search the route+month you crawled, watch results stream in.
+That's it — migrations and seed data (airports/clusters/ground corridors/routes) load automatically
+on api startup (idempotent: instant when already seeded), and the worker waits for the schema before
+crawling. Open http://localhost:3000 and search (e.g. BER → ALC next month): the first search on a
+cold cache enqueues crawl jobs and streams results in as fares land (typically well under a minute).
+
+Optional warm-up: `docker compose exec api python scripts/crawl_once.py BER ALC 2026-08` pre-fills
+fares for one route+month. If searches return nothing, check `curl http://localhost:8000/api/health`
+(`worker.alive` should be `true`) and `docker compose logs worker`.
+
+> Upgrading from an older checkout? A stale `pgdata` volume can carry an old schema — reset with
+> `docker compose down -v && docker compose up --build`.
 
 ## Quick start (no Docker — SQLite mode)
 
@@ -108,6 +115,9 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
 | `SEARCH_STREAM_POLL_S` | `5.0` | Poll interval while waiting for a cold route's fares to land |
+| `WORKER_DB_WAIT_S` | `180` | Max seconds the crawler worker waits at startup for migrations to finish |
+| `WORKER_HEARTBEAT_STALE_S` | `60` | Worker heartbeat older than this counts as dead (`/api/health` `worker.alive`) |
+| `RUN_SEEDS` | `false` (prod image) | Prod entrypoint only: run `layoverlab.seeds.load_all` after migrations |
 | `RATE_LIMIT_ENABLED` | `true` | In-process per-IP rate limiting (429 + `Retry-After`) |
 | `RATE_SEARCH_PER_MIN` | `10` | `/api/search` requests per minute per client IP |
 | `RATE_DEFAULT_PER_MIN` | `60` | All other endpoints, per minute per client IP |

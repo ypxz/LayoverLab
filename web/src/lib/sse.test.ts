@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseSSE } from "./api";
 import { formatMoney } from "./format";
 
@@ -33,5 +33,35 @@ describe("formatMoney", () => {
   });
   it("renders cents when present", () => {
     expect(formatMoney(1999)).toBe("€19.99");
+  });
+});
+
+describe("searchStream watchdog", () => {
+  it("cancels a stalled stream instead of spinning forever", async () => {
+    const { searchStream } = await import("./api");
+    let cancelled = false;
+    const stalledBody = new ReadableStream<Uint8Array>({
+      cancel() {
+        cancelled = true;
+      },
+      // never enqueues and never closes — simulates a hung connection
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(stalledBody, { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const events: string[] = [];
+      await searchStream(
+        { origin: "BER", dest: "ALC" } as never,
+        (event) => events.push(event),
+        undefined,
+        50,
+      );
+      expect(cancelled).toBe(true);
+      expect(events).toEqual([]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

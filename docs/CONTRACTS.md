@@ -78,9 +78,9 @@ async def verify_top(itins: list[Itinerary], n: int = 5) -> list[Itinerary]
 
 ## API (FastAPI, prefix `/api`)
 
-- `GET  /api/health` → `{status:"ok"}`
+- `GET  /api/health` → `{status:"ok"}` (extended additively: `worker: {alive: bool|null, last_heartbeat_age_s: number|null}`)
 - `GET  /api/airports?q=` → `[{iata, name, city, country_code}]`
-- `POST /api/search` body=SearchParams → **SSE**: `candidates` → `verified` → zero or more `update` (same payload shape as `candidates`, emitted while a cold route's fare cache fills and the result set improves) → `done` with `meta` object `{"crawl_pending": bool, "searched_pairs_covered": bool}`
+- `POST /api/search` body=SearchParams → **SSE**: `candidates` → `verified` → zero or more `update` (same payload shape as `candidates`, emitted while a cold route's fare cache fills and the result set improves) → `done` with `meta` object `{"crawl_pending": bool, "searched_pairs_covered": bool}` (extended additively: `"worker_alive": bool|null`, `"zero_results_reason": null | "no_coverage" | "crawl_pending" | "crawl_disabled" | "worker_down" | "sources_erroring"` — set only when the stream ends with zero results)
 - `POST /api/itineraries` body=Itinerary → `{id}`
 - `GET  /api/r/{id}` → Itinerary (re-verified on read)
 

@@ -27,6 +27,7 @@ services:
     env_file: .env
     environment:
       DATABASE_URL: postgresql+psycopg://layover:layover@db:5432/layoverlab
+      RUN_SEEDS: "true"
     ports:
       - "8000:8000"
     depends_on:

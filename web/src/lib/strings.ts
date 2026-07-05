@@ -59,6 +59,14 @@ export const STR = {
       "The connection to the search stream was lost. If the fare cache is empty, the crawler may still be collecting prices for this route.",
     noResults:
       "No routes in the cache for this search yet. The crawler has been notified and is fetching fares for this route now — try again in a few minutes.",
+    zeroCrawlPending:
+      "Still fetching fares for this route — the crawler is working on it. Retry in a minute.",
+    zeroCrawlDisabled:
+      "Crawling is disabled (CRAWL_ENABLED=false), so no fares can be fetched. Enable crawling and search again.",
+    zeroWorkerDown:
+      "The crawler worker is not running, so no fares can be fetched. Check `docker compose ps` and the worker logs, then search again.",
+    zeroSourcesErroring:
+      "All fare sources failed for this route (blocked or erroring). Check the worker logs — retrying later may help.",
     ariaResults: "Search results",
   },
   filters: {
