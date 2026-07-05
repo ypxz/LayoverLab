@@ -2,7 +2,9 @@
 
 import csv
 import io
+import json
 import logging
+import os
 from importlib.resources import files
 
 import httpx
@@ -15,6 +17,12 @@ log = logging.getLogger(__name__)
 
 OURAIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 OPENFLIGHTS_ROUTES_URL = "https://raw.githubusercontent.com/jpatokal/openflights/master/data/routes.dat"
+AIRPORTSDATA_TZ_URL = (
+    "https://raw.githubusercontent.com/mborsetti/airportsdata/main/airportsdata/airports.csv"
+)
+JONTY_ROUTES_URL = (
+    "https://raw.githubusercontent.com/Jonty/airline-route-data/main/airline_routes.json"
+)
 
 _ALLOWED_TYPES = {"large_airport", "medium_airport"}
 
@@ -46,8 +54,28 @@ def load_clusters(session: Session) -> int:
     return len(seen)
 
 
-def load_airports(session: Session, csv_text: str | None = None) -> int:
+def _tz_by_iata(tz_csv_text: str | None) -> dict[str, str]:
+    if tz_csv_text is None:
+        try:
+            tz_csv_text = _download(AIRPORTSDATA_TZ_URL)
+        except httpx.HTTPError as exc:
+            log.warning("airportsdata tz download failed (%s); tz will be null", exc)
+            return {}
+    out: dict[str, str] = {}
+    for row in csv.DictReader(io.StringIO(tz_csv_text)):
+        iata = (row.get("iata") or "").strip().upper()
+        tz = (row.get("tz") or "").strip()
+        if len(iata) == 3 and tz:
+            out[iata] = tz
+    return out
+
+
+def load_airports(
+    session: Session, csv_text: str | None = None, tz_csv_text: str | None = None
+) -> int:
+    live = csv_text is None
     csv_text = csv_text or _download(OURAIRPORTS_URL)
+    tz_map = _tz_by_iata(tz_csv_text) if (live or tz_csv_text is not None) else {}
     cluster_by_iata = {r["iata"]: r["cluster_id"] for r in _read_data_csv("clusters.csv")}
     reader = csv.DictReader(io.StringIO(csv_text))
     count = 0
@@ -70,6 +98,7 @@ def load_airports(session: Session, csv_text: str | None = None) -> int:
             country_code=(row.get("iso_country") or "")[:2],
             lat=lat,
             lon=lon,
+            tz=tz_map.get(iata),
             cluster_id=cluster_by_iata.get(iata),
         )
         if existing:
@@ -107,6 +136,23 @@ def load_ground_links(session: Session) -> int:
     return count
 
 
+def _upsert_routes(session: Session, pairs: dict[tuple[str, str], set[str]]) -> int:
+    session.execute(delete(Route))
+    now = utcnow()
+    for (origin, dest), carriers in pairs.items():
+        session.add(
+            Route(
+                origin=origin,
+                dest=dest,
+                carriers=sorted(carriers),
+                frequency_score=float(len(carriers)),
+                last_seen=now,
+            )
+        )
+    session.flush()
+    return len(pairs)
+
+
 def load_routes(session: Session, dat_text: str | None = None) -> int:
     """OpenFlights routes.dat -> routes table. Stale (2014) but fine for topology weighting."""
     dat_text = dat_text or _download(OPENFLIGHTS_ROUTES_URL)
@@ -122,17 +168,35 @@ def load_routes(session: Session, dat_text: str | None = None) -> int:
         if known and (origin not in known or dest not in known):
             continue
         pairs.setdefault((origin, dest), set()).add(carrier)
-    session.execute(delete(Route))
-    now = utcnow()
-    for (origin, dest), carriers in pairs.items():
-        session.add(
-            Route(
-                origin=origin,
-                dest=dest,
-                carriers=sorted(carriers),
-                frequency_score=float(len(carriers)),
-                last_seen=now,
-            )
-        )
-    session.flush()
-    return len(pairs)
+    return _upsert_routes(session, pairs)
+
+
+def load_routes_jonty(session: Session, json_text: str | None = None) -> int:
+    """Jonty/airline-route-data airline_routes.json -> routes table (fresher than OpenFlights)."""
+    json_text = json_text or _download(JONTY_ROUTES_URL, timeout=300.0)
+    data = json.loads(json_text)
+    known = {a for (a,) in session.execute(select(Airport.iata))}
+    pairs: dict[tuple[str, str], set[str]] = {}
+    for origin, airport in data.items():
+        origin = origin.strip().upper()
+        if len(origin) != 3:
+            continue
+        for route in airport.get("routes", []):
+            dest = (route.get("iata") or "").strip().upper()
+            if len(dest) != 3 or dest == origin:
+                continue
+            if known and (origin not in known or dest not in known):
+                continue
+            carriers = {
+                c["iata"] for c in route.get("carriers", []) if c.get("iata")
+            } or {"??"}
+            pairs.setdefault((origin, dest), set()).update(carriers)
+    return _upsert_routes(session, pairs)
+
+
+def load_routes_auto(session: Session) -> int:
+    """Dispatch on ROUTES_SOURCE env: 'openflights' (default) or 'jonty'."""
+    source = os.environ.get("ROUTES_SOURCE", "openflights").strip().lower()
+    if source == "jonty":
+        return load_routes_jonty(session)
+    return load_routes(session)

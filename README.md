@@ -100,6 +100,7 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `GF_ENABLED` | `false` | Google Flights verification connector (stub) |
 | `FIXTURE_CONNECTOR` | `false` | Deterministic synthetic fare connector for tests and the local fixture stack |
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
+| `ROUTES_SOURCE` | `openflights` | Route-topology seed source: `openflights` (stale 2014 hub prior) or `jonty` (fresher [airline-route-data](https://github.com/Jonty/airline-route-data)) |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
 | `SEARCH_STREAM_POLL_S` | `5.0` | Poll interval while waiting for a cold route's fares to land |

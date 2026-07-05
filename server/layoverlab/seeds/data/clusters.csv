@@ -1,48 +1,122 @@
-cluster_id,cluster_name,iata
-LON,London,LHR
-LON,London,LGW
-LON,London,STN
-LON,London,LTN
-LON,London,LCY
-LON,London,SEN
-PAR,Paris,CDG
-PAR,Paris,ORY
-PAR,Paris,BVA
-MIL,Milan,MXP
-MIL,Milan,LIN
-MIL,Milan,BGY
-FRA,Frankfurt,FRA
-FRA,Frankfurt,HHN
-ROM,Rome,FCO
-ROM,Rome,CIA
-BCN,Barcelona,BCN
-BCN,Barcelona,GRO
-BCN,Barcelona,REU
-BRU,Brussels,BRU
-BRU,Brussels,CRL
-STO,Stockholm,ARN
-STO,Stockholm,NYO
-STO,Stockholm,BMA
-WAW,Warsaw,WAW
-WAW,Warsaw,WMI
-OSL,Oslo,OSL
-OSL,Oslo,TRF
-IST,Istanbul,IST
-IST,Istanbul,SAW
-DUS,Duesseldorf,DUS
-DUS,Duesseldorf,NRN
-GLA,Glasgow,GLA
-GLA,Glasgow,PIK
-MUC,Munich,MUC
-MUC,Munich,FMM
-NYC,New York,JFK
-NYC,New York,EWR
-NYC,New York,LGA
-BKK,Bangkok,BKK
-BKK,Bangkok,DMK
-TYO,Tokyo,NRT
-TYO,Tokyo,HND
-DXB,Dubai,DXB
-DXB,Dubai,SHJ
-SEL,Seoul,ICN
-SEL,Seoul,GMP
+cluster_id,cluster_name,iata,source
+LON,London,LHR,https://en.wikipedia.org/wiki/Airports_of_London
+LON,London,LGW,https://en.wikipedia.org/wiki/Airports_of_London
+LON,London,STN,https://en.wikipedia.org/wiki/Airports_of_London
+LON,London,LTN,https://en.wikipedia.org/wiki/Airports_of_London
+LON,London,LCY,https://en.wikipedia.org/wiki/Airports_of_London
+LON,London,SEN,https://en.wikipedia.org/wiki/Airports_of_London
+PAR,Paris,CDG,https://en.wikipedia.org/wiki/List_of_airports_in_the_Paris_area
+PAR,Paris,ORY,https://en.wikipedia.org/wiki/List_of_airports_in_the_Paris_area
+PAR,Paris,BVA,https://en.wikipedia.org/wiki/List_of_airports_in_the_Paris_area
+MIL,Milan,MXP,https://en.wikipedia.org/wiki/Milan_Malpensa_Airport
+MIL,Milan,LIN,https://en.wikipedia.org/wiki/Linate_Airport
+MIL,Milan,BGY,https://en.wikipedia.org/wiki/Milan_Bergamo_Airport
+FRA,Frankfurt,FRA,https://en.wikipedia.org/wiki/Frankfurt_Airport
+FRA,Frankfurt,HHN,https://en.wikipedia.org/wiki/Frankfurt%E2%80%93Hahn_Airport
+ROM,Rome,FCO,https://en.wikipedia.org/wiki/Leonardo_da_Vinci%E2%80%93Fiumicino_Airport
+ROM,Rome,CIA,https://en.wikipedia.org/wiki/Ciampino%E2%80%93G._B._Pastine_International_Airport
+BCN,Barcelona,BCN,https://en.wikipedia.org/wiki/Josep_Tarradellas_Barcelona%E2%80%93El_Prat_Airport
+BCN,Barcelona,GRO,https://en.wikipedia.org/wiki/Girona%E2%80%93Costa_Brava_Airport
+BCN,Barcelona,REU,https://en.wikipedia.org/wiki/Reus_Airport
+BRU,Brussels,BRU,https://en.wikipedia.org/wiki/Brussels_Airport
+BRU,Brussels,CRL,https://en.wikipedia.org/wiki/Brussels_South_Charleroi_Airport
+STO,Stockholm,ARN,https://en.wikipedia.org/wiki/Stockholm_Arlanda_Airport
+STO,Stockholm,NYO,https://en.wikipedia.org/wiki/Stockholm_Skavsta_Airport
+STO,Stockholm,BMA,https://en.wikipedia.org/wiki/Stockholm_Bromma_Airport
+STO,Stockholm,VST,https://en.wikipedia.org/wiki/Stockholm_V%C3%A4ster%C3%A5s_Airport
+WAW,Warsaw,WAW,https://en.wikipedia.org/wiki/Warsaw_Chopin_Airport
+WAW,Warsaw,WMI,https://en.wikipedia.org/wiki/Warsaw_Modlin_Airport
+OSL,Oslo,OSL,https://en.wikipedia.org/wiki/Oslo_Airport
+OSL,Oslo,TRF,https://en.wikipedia.org/wiki/Sandefjord_Airport%2C_Torp
+IST,Istanbul,IST,https://en.wikipedia.org/wiki/Istanbul_Airport
+IST,Istanbul,SAW,https://en.wikipedia.org/wiki/Sabiha_G%C3%B6k%C3%A7en_International_Airport
+DUS,Duesseldorf,DUS,https://en.wikipedia.org/wiki/D%C3%BCsseldorf_Airport
+DUS,Duesseldorf,NRN,https://en.wikipedia.org/wiki/Weeze_Airport
+GLA,Glasgow,GLA,https://en.wikipedia.org/wiki/Glasgow_Airport
+GLA,Glasgow,PIK,https://en.wikipedia.org/wiki/Glasgow_Prestwick_Airport
+MUC,Munich,MUC,https://en.wikipedia.org/wiki/Munich_Airport
+MUC,Munich,FMM,https://en.wikipedia.org/wiki/Memmingen_Airport
+VCE,Venice,VCE,https://en.wikipedia.org/wiki/Venice_Marco_Polo_Airport
+VCE,Venice,TSF,https://en.wikipedia.org/wiki/Treviso_Airport
+BFS,Belfast,BFS,https://en.wikipedia.org/wiki/Belfast_International_Airport
+BFS,Belfast,BHD,https://en.wikipedia.org/wiki/George_Best_Belfast_City_Airport
+TCI,Tenerife,TFN,https://en.wikipedia.org/wiki/Tenerife_North_Airport
+TCI,Tenerife,TFS,https://en.wikipedia.org/wiki/Tenerife_South_Airport
+CPH,Copenhagen-Malmo,CPH,https://en.wikipedia.org/wiki/Copenhagen_Airport
+CPH,Copenhagen-Malmo,MMX,https://en.wikipedia.org/wiki/Malm%C3%B6_Airport
+REK,Reykjavik,KEF,https://en.wikipedia.org/wiki/Keflav%C3%ADk_International_Airport
+REK,Reykjavik,RKV,https://en.wikipedia.org/wiki/Reykjav%C3%ADk_Airport
+MOW,Moscow,SVO,https://en.wikipedia.org/wiki/Sheremetyevo_International_Airport
+MOW,Moscow,DME,https://en.wikipedia.org/wiki/Moscow_Domodedovo_Airport
+MOW,Moscow,VKO,https://en.wikipedia.org/wiki/Vnukovo_International_Airport
+NYC,New York,JFK,https://en.wikipedia.org/wiki/Aviation_in_the_New_York_metropolitan_area
+NYC,New York,EWR,https://en.wikipedia.org/wiki/Aviation_in_the_New_York_metropolitan_area
+NYC,New York,LGA,https://en.wikipedia.org/wiki/Aviation_in_the_New_York_metropolitan_area
+WAS,Washington DC,IAD,https://en.wikipedia.org/wiki/Washington_Dulles_International_Airport
+WAS,Washington DC,DCA,https://en.wikipedia.org/wiki/Ronald_Reagan_Washington_National_Airport
+WAS,Washington DC,BWI,https://en.wikipedia.org/wiki/Baltimore/Washington_International_Airport
+CHI,Chicago,ORD,https://en.wikipedia.org/wiki/O%27Hare_International_Airport
+CHI,Chicago,MDW,https://en.wikipedia.org/wiki/Midway_International_Airport
+SFO,San Francisco Bay,SFO,https://en.wikipedia.org/wiki/San_Francisco_International_Airport
+SFO,San Francisco Bay,OAK,https://en.wikipedia.org/wiki/Oakland_International_Airport
+SFO,San Francisco Bay,SJC,https://en.wikipedia.org/wiki/San_Jose_International_Airport
+LAX,Los Angeles basin,LAX,https://en.wikipedia.org/wiki/Los_Angeles_International_Airport
+LAX,Los Angeles basin,BUR,https://en.wikipedia.org/wiki/Hollywood_Burbank_Airport
+LAX,Los Angeles basin,LGB,https://en.wikipedia.org/wiki/Long_Beach_Airport
+LAX,Los Angeles basin,SNA,https://en.wikipedia.org/wiki/John_Wayne_Airport
+LAX,Los Angeles basin,ONT,https://en.wikipedia.org/wiki/Ontario_International_Airport
+MIA,Miami,MIA,https://en.wikipedia.org/wiki/Miami_International_Airport
+MIA,Miami,FLL,https://en.wikipedia.org/wiki/Fort_Lauderdale%E2%80%93Hollywood_International_Airport
+MIA,Miami,PBI,https://en.wikipedia.org/wiki/Palm_Beach_International_Airport
+HOU,Houston,IAH,https://en.wikipedia.org/wiki/George_Bush_Intercontinental_Airport
+HOU,Houston,HOU,https://en.wikipedia.org/wiki/William_P._Hobby_Airport
+DFW,Dallas-Fort Worth,DFW,https://en.wikipedia.org/wiki/Dallas_Fort_Worth_International_Airport
+DFW,Dallas-Fort Worth,DAL,https://en.wikipedia.org/wiki/Dallas_Love_Field
+ORL,Orlando,MCO,https://en.wikipedia.org/wiki/Orlando_International_Airport
+ORL,Orlando,SFB,https://en.wikipedia.org/wiki/Orlando_Sanford_International_Airport
+TPA,Tampa Bay,TPA,https://en.wikipedia.org/wiki/Tampa_International_Airport
+TPA,Tampa Bay,PIE,https://en.wikipedia.org/wiki/St._Pete%E2%80%93Clearwater_International_Airport
+PHX,Phoenix,PHX,https://en.wikipedia.org/wiki/Phoenix_Sky_Harbor_International_Airport
+PHX,Phoenix,AZA,https://en.wikipedia.org/wiki/Phoenix%E2%80%93Mesa_Gateway_Airport
+YTO,Toronto,YYZ,https://en.wikipedia.org/wiki/Toronto_Pearson_International_Airport
+YTO,Toronto,YTZ,https://en.wikipedia.org/wiki/Billy_Bishop_Toronto_City_Airport
+YTO,Toronto,YHM,https://en.wikipedia.org/wiki/John_C._Munro_Hamilton_International_Airport
+MEX,Mexico City,MEX,https://en.wikipedia.org/wiki/Mexico_City_International_Airport
+MEX,Mexico City,NLU,https://en.wikipedia.org/wiki/Felipe_%C3%81ngeles_International_Airport
+MEX,Mexico City,TLC,https://en.wikipedia.org/wiki/Toluca_International_Airport
+SAO,Sao Paulo,GRU,https://en.wikipedia.org/wiki/S%C3%A3o_Paulo/Guarulhos_International_Airport
+SAO,Sao Paulo,CGH,https://en.wikipedia.org/wiki/S%C3%A3o_Paulo/Congonhas_Airport
+SAO,Sao Paulo,VCP,https://en.wikipedia.org/wiki/Viracopos_International_Airport
+RIO,Rio de Janeiro,GIG,https://en.wikipedia.org/wiki/Rio_de_Janeiro/Gale%C3%A3o_International_Airport
+RIO,Rio de Janeiro,SDU,https://en.wikipedia.org/wiki/Santos_Dumont_Airport
+BUE,Buenos Aires,EZE,https://en.wikipedia.org/wiki/Ministro_Pistarini_International_Airport
+BUE,Buenos Aires,AEP,https://en.wikipedia.org/wiki/Aeroparque_Jorge_Newbery
+TYO,Tokyo,NRT,https://en.wikipedia.org/wiki/Narita_International_Airport
+TYO,Tokyo,HND,https://en.wikipedia.org/wiki/Haneda_Airport
+OSA,Osaka,KIX,https://en.wikipedia.org/wiki/Kansai_International_Airport
+OSA,Osaka,ITM,https://en.wikipedia.org/wiki/Osaka_International_Airport
+SEL,Seoul,ICN,https://en.wikipedia.org/wiki/Incheon_International_Airport
+SEL,Seoul,GMP,https://en.wikipedia.org/wiki/Gimpo_International_Airport
+SHA,Shanghai,PVG,https://en.wikipedia.org/wiki/Shanghai_Pudong_International_Airport
+SHA,Shanghai,SHA,https://en.wikipedia.org/wiki/Shanghai_Hongqiao_International_Airport
+BJS,Beijing,PEK,https://en.wikipedia.org/wiki/Beijing_Capital_International_Airport
+BJS,Beijing,PKX,https://en.wikipedia.org/wiki/Beijing_Daxing_International_Airport
+TPE,Taipei,TPE,https://en.wikipedia.org/wiki/Taoyuan_International_Airport
+TPE,Taipei,TSA,https://en.wikipedia.org/wiki/Taipei_Songshan_Airport
+BKK,Bangkok,BKK,https://en.wikipedia.org/wiki/Suvarnabhumi_Airport
+BKK,Bangkok,DMK,https://en.wikipedia.org/wiki/Don_Mueang_International_Airport
+KUL,Kuala Lumpur,KUL,https://en.wikipedia.org/wiki/Kuala_Lumpur_International_Airport
+KUL,Kuala Lumpur,SZB,https://en.wikipedia.org/wiki/Sultan_Abdul_Aziz_Shah_Airport
+JKT,Jakarta,CGK,https://en.wikipedia.org/wiki/Soekarno%E2%80%93Hatta_International_Airport
+JKT,Jakarta,HLP,https://en.wikipedia.org/wiki/Halim_Perdanakusuma_International_Airport
+MNL,Manila,MNL,https://en.wikipedia.org/wiki/Ninoy_Aquino_International_Airport
+MNL,Manila,CRK,https://en.wikipedia.org/wiki/Clark_International_Airport
+DXB,Dubai,DXB,https://en.wikipedia.org/wiki/Dubai_International_Airport
+DXB,Dubai,SHJ,https://en.wikipedia.org/wiki/Sharjah_International_Airport
+DXB,Dubai,DWC,https://en.wikipedia.org/wiki/Al_Maktoum_International_Airport
+THR,Tehran,IKA,https://en.wikipedia.org/wiki/Imam_Khomeini_International_Airport
+THR,Tehran,THR,https://en.wikipedia.org/wiki/Mehrabad_International_Airport
+JNB,Johannesburg,JNB,https://en.wikipedia.org/wiki/O._R._Tambo_International_Airport
+JNB,Johannesburg,HLA,https://en.wikipedia.org/wiki/Lanseria_International_Airport
+MEL,Melbourne,MEL,https://en.wikipedia.org/wiki/Melbourne_Airport
+MEL,Melbourne,AVV,https://en.wikipedia.org/wiki/Avalon_Airport

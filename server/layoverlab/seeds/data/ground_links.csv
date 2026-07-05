@@ -1,33 +1,119 @@
-from_iata,to_iata,mode,minutes,price_cents
-CGN,BRU,train,110,2900
-CGN,DUS,train,35,1200
-CGN,FRA,train,65,3900
-VIE,BTS,bus,70,900
-VIE,BUD,train,170,1900
-BUD,BTS,train,130,1500
-AMS,BRU,train,115,2900
-AMS,DUS,train,140,3500
-CDG,BRU,train,110,4500
-CDG,LHR,train,180,6900
-LHR,BRU,train,170,5900
-MXP,ZRH,train,230,3900
-MXP,VCE,train,170,2500
-FCO,NAP,train,140,2900
-CPH,MMX,train,40,1300
-HAM,CPH,train,290,4500
-BER,PRG,bus,250,1900
-PRG,VIE,train,250,1900
-KRK,KTW,bus,95,900
-WAW,KRK,train,150,1900
-GVA,LYS,bus,130,1900
-BSL,ZRH,train,75,2500
-MUC,SZG,train,105,1900
-HHN,FRA,bus,105,1700
-NRN,DUS,bus,80,1500
-IST,SAW,bus,150,1000
-TLL,RIX,bus,280,2500
-VNO,KUN,bus,95,900
-EDI,GLA,bus,85,1200
-ARN,NYO,bus,150,2500
-OSL,TRF,bus,115,1900
-LIS,OPO,train,200,2500
+from_iata,to_iata,mode,minutes,price_cents,note
+CGN,BRU,train,110,2900,ICE/Thalys Cologne-Brussels
+CGN,DUS,train,35,1200,RE frequent regional
+CGN,FRA,train,65,3900,ICE high-speed direct
+VIE,BTS,bus,70,900,Flixbus/Slovak Lines Vienna airport-Bratislava
+VIE,BUD,train,170,1900,Railjet Vienna-Budapest
+BUD,BTS,train,130,1500,EC Budapest-Bratislava
+AMS,BRU,train,115,2900,IC Brussels direct
+AMS,DUS,train,140,3500,ICE Amsterdam-Duesseldorf
+CDG,BRU,train,110,4500,TGV/Eurostar CDG station-Brussels Midi
+CDG,LHR,train,180,6900,Eurostar Paris-London plus transfers
+LHR,BRU,train,170,5900,Eurostar London-Brussels plus transfers
+MXP,ZRH,train,230,3900,EC Milan-Zurich
+MXP,VCE,train,170,2500,Frecciarossa Milan-Venice
+FCO,NAP,train,140,2900,Frecciarossa via Roma Termini
+CPH,MMX,train,40,1300,Oresund train Copenhagen airport-Malmo
+HAM,CPH,train,290,4500,EC Hamburg-Copenhagen
+BER,PRG,bus,250,1900,Flixbus Berlin-Prague
+PRG,VIE,train,250,1900,Railjet Prague-Vienna
+KRK,KTW,bus,95,900,Flixbus Krakow-Katowice
+WAW,KRK,train,150,1900,EIP Warsaw-Krakow
+GVA,LYS,bus,130,1900,Flixbus Geneva-Lyon
+BSL,ZRH,train,75,2500,IC Basel-Zurich
+MUC,SZG,train,105,1900,Railjet Munich-Salzburg
+HHN,FRA,bus,105,1700,Flibco Hahn-Frankfurt shuttle
+NRN,DUS,bus,80,1500,Weeze-Duesseldorf shuttle
+IST,SAW,bus,150,1000,Havaist/Havabus cross-city
+TLL,RIX,bus,280,2500,Lux Express Tallinn-Riga
+VNO,KUN,bus,95,900,Vilnius-Kaunas coach
+EDI,GLA,bus,85,1200,Citylink Edinburgh-Glasgow
+ARN,NYO,bus,150,2500,Via Stockholm City flygbussarna
+OSL,TRF,bus,115,1900,Torp Ekspressen via Oslo
+LIS,OPO,train,200,2500,Alfa Pendular Lisbon-Porto
+LHR,LGW,bus,90,3000,National Express direct coach
+LHR,STN,bus,110,2500,National Express direct coach
+LHR,LTN,bus,90,2500,National Express/Green Line coach
+LGW,STN,train,150,4000,Thameslink via central London
+LGW,LTN,train,120,3000,Thameslink direct Gatwick-Luton
+STN,LTN,bus,80,1500,Coach via A(M)1 corridor
+CDG,ORY,train,105,2500,RER B plus Orlyval
+CDG,BVA,bus,120,2000,Via Paris Porte Maillot shuttles
+MXP,LIN,bus,70,1500,Milan airport shuttle via city
+MXP,BGY,bus,110,2000,Via Milan city coach
+LIN,BGY,bus,80,1500,Via Milan city coach
+FCO,CIA,bus,75,1500,Via Roma Termini shuttles
+BCN,GRO,bus,80,1900,Sagales airport coach
+BRU,CRL,bus,60,1800,Flibco Brussels-Charleroi shuttle
+ARN,BMA,bus,70,1500,Flygbussarna via Stockholm
+WAW,WMI,bus,60,1000,Modlin shuttle via Warsaw
+JFK,EWR,train,120,2000,AirTrain plus NJ Transit via Manhattan
+JFK,LGA,bus,60,1500,Via NYC transit/shuttle
+EWR,LGA,bus,90,1500,Via Manhattan transit
+IAD,DCA,train,80,500,Silver/Blue Line Metro
+DCA,BWI,train,90,1500,Metro plus MARC via Union Station
+IAD,BWI,bus,120,2000,Via Washington DC transit
+ORD,MDW,train,105,500,CTA Blue-Orange line via Loop
+SFO,OAK,train,60,1000,BART cross-bay
+NRT,HND,bus,85,2000,Airport Limousine Bus direct
+ICN,GMP,train,40,1000,AREX all-stop direct
+PVG,SHA,train,90,1000,Metro Line 2 cross-city
+GRU,CGH,bus,90,1500,Airport bus service via Sao Paulo
+GIG,SDU,bus,60,500,BRT/frescao via Rio centro
+EZE,AEP,bus,70,1000,Tienda Leon shuttle
+SVO,DME,train,150,1500,Aeroexpress via Moscow city
+DME,VKO,train,160,1500,Aeroexpress via Moscow city
+DXB,SHJ,bus,45,500,RTA intercity bus
+BKK,DMK,bus,50,500,Free/A1 shuttle between airports
+KUL,SZB,bus,75,1000,Via KL Sentral transit
+CGK,HLP,bus,90,1000,Via Jakarta city (DAMRI)
+TPE,TSA,bus,60,500,Airport MRT plus metro via Taipei
+MEX,TLC,bus,90,1000,Caminante Toluca coach
+MEX,NLU,bus,90,500,Mexibus/shuttle AIFA connection
+BFS,BHD,bus,35,500,Via Belfast city centre
+KEF,RKV,bus,60,3000,Flybus via Reykjavik BSI
+FRA,STR,train,120,3000,ICE Frankfurt-Stuttgart
+FRA,DUS,train,110,3500,ICE Frankfurt airport-Duesseldorf
+FRA,MUC,train,260,5500,ICE Frankfurt-Munich
+MUC,NUE,train,110,2500,ICE Munich-Nuremberg
+BER,HAM,train,150,3500,ICE Berlin-Hamburg
+BER,LEJ,train,110,2500,ICE Berlin-Leipzig/Halle
+HAM,BRE,train,90,2000,IC Hamburg-Bremen
+CDG,LIL,train,80,3500,TGV CDG-Lille direct
+CDG,LYS,train,150,5500,TGV CDG-Lyon direct
+MRS,NCE,train,180,3500,TER/IC Marseille-Nice
+NCE,GOA,train,220,3500,Thello/regional Nice-Genoa
+MAD,BCN,train,190,4500,AVE Madrid-Barcelona plus transfers
+MAD,VLC,train,140,3000,AVE Madrid-Valencia
+BCN,VLC,train,220,3000,Euromed Barcelona-Valencia
+MAD,SVQ,train,190,4000,AVE Madrid-Seville
+MAD,AGP,train,200,4500,AVE Madrid-Malaga
+FCO,FLR,train,140,3000,Frecciarossa via Roma Termini
+MXP,TRN,train,140,2000,Regional/Freccia Milan-Turin
+VCE,BLQ,train,120,2500,Frecciarossa Venice-Bologna
+BLQ,FLR,train,60,2000,Frecciarossa Bologna-Florence
+MUC,PRG,bus,290,2500,Flixbus Munich-Prague
+VIE,GRZ,train,170,2500,Railjet Vienna-Graz
+ZRH,MUC,train,240,4500,EC Zurich-Munich
+ZRH,GVA,train,190,4500,IC Zurich-Geneva
+WAW,GDN,train,200,2500,EIP Warsaw-Gdansk
+WAW,POZ,train,180,2000,EIP Warsaw-Poznan
+WRO,KRK,train,220,2500,IC Wroclaw-Krakow
+CPH,GOT,train,260,3500,Oresundstag Copenhagen-Gothenburg
+GOT,OSL,bus,240,2500,Flixbus/Vy Gothenburg-Oslo
+LHR,BHX,bus,150,2500,National Express coach
+LHR,BRS,bus,140,2500,National Express coach
+MAN,LPL,train,80,1500,Northern rail via city
+MAN,LBA,train,110,1500,Rail via Leeds
+BHX,MAN,train,130,3000,Cross Country via New Street
+EDI,NCL,train,140,3000,LNER Edinburgh-Newcastle
+BHX,EMA,bus,90,1500,Coach via M42/M1
+KUL,SIN,bus,330,1500,Long-distance coach KL-Singapore
+SZX,HKG,bus,90,2000,Cross-border coach Shenzhen-Hong Kong
+CAN,HKG,train,150,3000,HSR Guangzhou-West Kowloon plus transfers
+JFK,PHL,train,150,4000,AirTrain plus Amtrak/NJT-SEPTA
+EWR,PHL,train,100,3000,Amtrak/NJT Newark-Philadelphia
+YYZ,BUF,bus,180,2500,Cross-border coach Toronto-Buffalo
+SEA,YVR,bus,240,3500,Quick Shuttle/Flixbus Seattle-Vancouver
+SAN,TIJ,bus,45,3000,CBX Cross Border Xpress bridge
+JNB,HLA,bus,60,1500,Shuttle via Johannesburg
