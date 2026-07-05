@@ -4,6 +4,7 @@ import logging
 from datetime import date
 
 from layoverlab.connectors.base import ConnectorError, DayFare, register
+from layoverlab.connectors.fx import to_eur_cents
 from layoverlab.connectors.http import PoliteClient
 
 log = logging.getLogger(__name__)
@@ -40,8 +41,8 @@ class RyanairConnector:
                 continue
             try:
                 dep = date.fromisoformat(entry["day"])
-                cents = round(float(price["value"]) * 100)
-                currency = price.get("currencyCode", "EUR")
+                currency = (price.get("currencyCode") or "EUR").upper()
+                cents = await to_eur_cents(float(price["value"]), currency, self.client)
             except (KeyError, TypeError, ValueError) as exc:
                 raise ConnectorError(f"unexpected fare entry shape: {entry!r}") from exc
             fares.append(
@@ -50,7 +51,7 @@ class RyanairConnector:
                     dest=dest,
                     dep_date=dep,
                     price_cents=cents,
-                    currency=currency,
+                    currency="EUR",
                     deep_link=booking_deep_link(origin, dest, dep),
                 )
             )
