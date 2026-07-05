@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import anyio
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
@@ -105,18 +105,12 @@ def _pair_cache_fresh_inner(params: SearchParams) -> bool:
     return datetime.now(timezone.utc) - latest < ttl
 
 
-async def _wait_for_fares(origin: str, dest: str, timeout_s: float) -> None:
-    """Wait for the crawler to signal fresh fares for the pair; poll-based fallback."""
-    try:
-        from layoverlab.crawler.notify import wait_for_pair  # provided by agent D
-    except ImportError:
-        await anyio.sleep(timeout_s)
-        return
-    try:
-        with anyio.fail_after(timeout_s):
-            await wait_for_pair(origin, dest)
-    except TimeoutError:
-        pass
+async def _wait_for_fares(origin: str, dest: str, month: date, timeout_s: float) -> None:
+    """Wait for the crawler to signal the pair's jobs are terminal (agent D's notify)."""
+    from layoverlab.crawler.notify import wait_for_pair
+    from layoverlab.db.session import get_sessionmaker
+
+    await wait_for_pair(get_sessionmaker(), origin, dest, month, timeout_s=timeout_s)
 
 
 def _improved(new: list[Itinerary], best_total: int | None, best_count: int) -> bool:
@@ -176,7 +170,10 @@ async def search_endpoint(
                 while time.perf_counter() < deadline:
                     remaining = deadline - time.perf_counter()
                     await _wait_for_fares(
-                        params.origin, params.dest, min(settings.search_stream_poll_s, remaining)
+                        params.origin,
+                        params.dest,
+                        params.date_from.replace(day=1),
+                        min(settings.search_stream_poll_s, remaining),
                     )
                     if time.perf_counter() >= deadline:
                         break

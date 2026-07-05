@@ -23,11 +23,11 @@ def _require_admin(x_admin_token: str | None) -> None:
 @router.get("/crawler")
 def crawler_stats(x_admin_token: str | None = Header(default=None)) -> dict:
     _require_admin(x_admin_token)
-    try:
-        from layoverlab.crawler.stats import get_stats  # provided by agent D
-    except ImportError:
-        return {"status": "pending-agent-d"}
-    return get_stats()
+    from layoverlab.crawler.stats import get_stats
+    from layoverlab.db.session import session_scope
+
+    with session_scope() as session:
+        return get_stats(session)
 
 
 @router.get("/config")

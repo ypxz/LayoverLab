@@ -137,11 +137,22 @@ def test_admin_config_redacts_secrets(client, monkeypatch):
     assert "tp-super-secret" not in resp.text
 
 
-def test_admin_crawler_pending_until_agent_d(client, monkeypatch):
+def test_admin_crawler_stats(client, session, monkeypatch):
+    from contextlib import contextmanager
+
+    import layoverlab.db.session as db_session
+
+    @contextmanager
+    def fake_scope():
+        yield session
+
+    monkeypatch.setattr(db_session, "session_scope", fake_scope)
     monkeypatch.setattr(get_settings(), "admin_token", "correct-token")
     resp = client.get("/api/admin/crawler", headers={"X-Admin-Token": "correct-token"})
     assert resp.status_code == 200
-    assert resp.json() == {"status": "pending-agent-d"}
+    body = resp.json()
+    assert "jobs" in body
+    assert set(body["jobs"]) >= {"pending", "running", "done", "error", "dead"}
 
 
 def test_metrics_exposes_counters(client):
@@ -173,7 +184,7 @@ def test_sse_update_emitted_on_improvement(client, monkeypatch):
         routes_module, "_pair_cache_fresh", lambda params: next(fresh_states, True)
     )
 
-    async def fake_wait(origin, dest, timeout_s):
+    async def fake_wait(origin, dest, month, timeout_s):
         return None
 
     monkeypatch.setattr(routes_module, "_wait_for_fares", fake_wait)
@@ -194,6 +205,13 @@ def test_sse_cold_route_times_out_and_closes(client, monkeypatch):
     monkeypatch.setattr(get_settings(), "search_stream_max_s", 1)
     monkeypatch.setattr(get_settings(), "search_stream_poll_s", 0.05)
     monkeypatch.setattr(routes_module, "_rerun_search", lambda params: [_itinerary()])
+
+    async def fake_wait(origin, dest, month, timeout_s):
+        import anyio
+
+        await anyio.sleep(timeout_s)
+
+    monkeypatch.setattr(routes_module, "_wait_for_fares", fake_wait)
 
     with client.stream("POST", "/api/search", json=SEARCH_BODY) as resp:
         events = _sse_events(resp)
