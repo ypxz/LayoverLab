@@ -219,3 +219,48 @@ def test_sse_cold_route_times_out_and_closes(client, monkeypatch):
     assert names == ["candidates", "verified", "done"]
     meta = json.loads(events[-1][1])["meta"]
     assert meta == {"crawl_pending": True, "searched_pairs_covered": False}
+
+
+def _rt_params() -> routes_module.SearchParams:
+    return routes_module.SearchParams(
+        origin="BER", dest="ALC", date_from=date(2026, 8, 1), date_to=date(2026, 8, 31),
+        round_trip=True, trip_max_days=7,
+    )
+
+
+def test_run_search_round_trip_enqueues_inbound_leg(session, monkeypatch):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_scope():
+        yield session
+
+    calls: list[tuple] = []
+    monkeypatch.setattr(routes_module, "session_scope", fake_scope)
+    monkeypatch.setattr(
+        routes_module, "enqueue_for_search",
+        lambda s, o, d, f, t: calls.append((o, d, f, t)),
+    )
+    monkeypatch.setattr(routes_module, "search", lambda params, s: [])
+
+    routes_module._run_search(_rt_params())
+    assert ("BER", "ALC", date(2026, 8, 1), date(2026, 8, 31)) in calls
+    assert ("ALC", "BER", date(2026, 8, 1), date(2026, 9, 7)) in calls
+
+
+def test_pair_cache_fresh_round_trip_requires_inbound(session, monkeypatch):
+    from contextlib import contextmanager
+
+    from tests.conftest import add_fare
+
+    @contextmanager
+    def fake_scope():
+        yield session
+
+    monkeypatch.setattr(routes_module, "session_scope", fake_scope)
+    add_fare(session, "BER", "ALC", date(2026, 8, 19), 2500)
+
+    params = _rt_params()
+    assert routes_module._pair_cache_fresh_inner(params) is False  # inbound uncrawled
+    add_fare(session, "ALC", "BER", date(2026, 8, 25), 2600)
+    assert routes_module._pair_cache_fresh_inner(params) is True

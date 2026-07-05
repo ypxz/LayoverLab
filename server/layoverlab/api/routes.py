@@ -67,6 +67,9 @@ def airports(q: str = Query(min_length=2, max_length=64), db: Session = Depends(
 def _run_search(params: SearchParams) -> list[Itinerary]:
     with session_scope() as session:
         enqueue_for_search(session, params.origin, params.dest, params.date_from, params.date_to)
+        if params.round_trip:
+            inbound_to = params.date_to + timedelta(days=params.trip_max_days or 30)
+            enqueue_for_search(session, params.dest, params.origin, params.date_from, inbound_to)
         return search(params, session)
 
 
@@ -87,22 +90,31 @@ def _pair_cache_fresh(params: SearchParams) -> bool:
         return True
 
 
-def _pair_cache_fresh_inner(params: SearchParams) -> bool:
-    with session_scope() as session:
-        latest = session.execute(
-            select(func.max(Fare.fetched_at)).where(
-                Fare.origin == params.origin,
-                Fare.dest == params.dest,
-                Fare.dep_date >= params.date_from,
-                Fare.dep_date <= params.date_to,
-            )
-        ).scalar_one_or_none()
+def _fares_fresh(session: Session, origin: str, dest: str, date_from: date, date_to: date) -> bool:
+    latest = session.execute(
+        select(func.max(Fare.fetched_at)).where(
+            Fare.origin == origin,
+            Fare.dest == dest,
+            Fare.dep_date >= date_from,
+            Fare.dep_date <= date_to,
+        )
+    ).scalar_one_or_none()
     if latest is None:
         return False
     if latest.tzinfo is None:
         latest = latest.replace(tzinfo=timezone.utc)
     ttl = timedelta(hours=get_settings().fare_ttl_hours / 2)
     return datetime.now(timezone.utc) - latest < ttl
+
+
+def _pair_cache_fresh_inner(params: SearchParams) -> bool:
+    with session_scope() as session:
+        if not _fares_fresh(session, params.origin, params.dest, params.date_from, params.date_to):
+            return False
+        if not params.round_trip:
+            return True
+        inbound_to = params.date_to + timedelta(days=params.trip_max_days or 30)
+        return _fares_fresh(session, params.dest, params.origin, params.date_from, inbound_to)
 
 
 async def _wait_for_fares(origin: str, dest: str, month: date, timeout_s: float) -> None:
