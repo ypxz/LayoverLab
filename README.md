@@ -103,6 +103,7 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
 | `ROUTES_SOURCE` | `openflights` | Route-topology seed source: `openflights` (stale 2014 hub prior) or `jonty` (fresher [airline-route-data](https://github.com/Jonty/airline-route-data)) |
 | `VERIFY_TOP_K` | `5` | Max itineraries live-verified per search |
+| `ENGINE_NIGHT_COST_CENTS` | `1500` | Value-of-time for `sort=best`: EUR cents added per stopover night when ranking |
 | `SELF_TRANSFER_MIN_H` | `3.0` | Minimum connection gap (hours) when real times are known; tighter itineraries are dropped from verified results |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
