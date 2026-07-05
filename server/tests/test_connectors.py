@@ -52,6 +52,25 @@ async def test_ryanair_fetch_month_parses_and_skips_unavailable(polite_client):
 
 
 @respx.mock
+async def test_ryanair_converts_non_eur_fares(polite_client, monkeypatch):
+    import layoverlab.connectors.fx as fx
+
+    async def fake_rates(client=None):
+        return {"PLN": 4.0}
+
+    monkeypatch.setattr(fx, "get_rates", fake_rates)
+    fixture = {
+        "outbound": {"fares": [{"day": "2026-08-01", "price": {"value": 40.0, "currencyCode": "PLN"}}]}
+    }
+    url = f"{FARFND_BASE}/oneWayFares/BER/KRK/cheapestPerDay"
+    respx.get(url).mock(return_value=Response(200, json=fixture))
+    connector = RyanairConnector(client=polite_client)
+    fares = await connector.fetch_month("BER", "KRK", date(2026, 8, 1))
+    assert fares[0]["price_cents"] == 1000  # 40 PLN / 4.0 = 10 EUR
+    assert fares[0]["currency"] == "EUR"
+
+
+@respx.mock
 async def test_ryanair_verify_day(polite_client):
     url = f"{FARFND_BASE}/oneWayFares/BER/ALC/cheapestPerDay"
     respx.get(url).mock(return_value=Response(200, json=RYANAIR_FIXTURE))
