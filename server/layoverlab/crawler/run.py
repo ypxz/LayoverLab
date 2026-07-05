@@ -33,6 +33,13 @@ def _domain_groups() -> list[list[str]]:
     return list(groups.values())
 
 
+def _worker_assignments(groups: list[list[str]], concurrency: int) -> list[list[str] | None]:
+    """One coroutine per domain group at minimum, so no enabled source is ever starved;
+    extra coroutines (None) claim from any domain."""
+    n = max(concurrency, len(groups), 1)
+    return [groups[i] if i < len(groups) else None for i in range(n)]
+
+
 async def process_one(connectors: list[str] | None = None) -> bool:
     """Claim and run a single job. Returns False when nothing is claimable."""
     with session_scope() as session:
@@ -89,11 +96,10 @@ async def main() -> None:
         tasks.append(asyncio.create_task(_job_worker("w0", None)))
     else:
         groups = _domain_groups()
-        n = max(settings.crawler_concurrency, 1)
-        for i in range(n):
-            connectors = groups[i] if i < len(groups) else None
+        assignments = _worker_assignments(groups, settings.crawler_concurrency)
+        for i, connectors in enumerate(assignments):
             tasks.append(asyncio.create_task(_job_worker(f"w{i}", connectors)))
-        log.info("started %d job coroutines (%d domain groups)", n, len(groups))
+        log.info("started %d job coroutines (%d domain groups)", len(assignments), len(groups))
     tasks.append(asyncio.create_task(_scheduler_tick_loop()))
     await asyncio.gather(*tasks)
 

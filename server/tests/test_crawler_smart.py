@@ -278,3 +278,15 @@ def test_get_stats(session):
     assert stats["budget_remaining"]["services-api.ryanair.com"] == 400
     assert stats["oldest_pending_age_s"] == pytest.approx(1800, abs=60)
     assert stats["coverage_rows"] == 1
+
+
+def test_worker_assignments_cover_every_domain_group():
+    """Regression: concurrency below the domain-group count must not starve sources."""
+    from layoverlab.crawler.run import _worker_assignments
+
+    groups = [["easyjet"], ["ryanair"], ["travelpayouts"], ["wizzair"]]
+    assignments = _worker_assignments(groups, concurrency=2)
+    assert [a for a in assignments if a is not None] == groups
+    # extra coroutines beyond the groups claim from any domain
+    assert _worker_assignments(groups, concurrency=6)[4:] == [None, None]
+    assert _worker_assignments([], concurrency=0) == [None]
