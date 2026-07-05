@@ -22,6 +22,7 @@ def booking_deep_link(origin: str, dest: str, dep_date: date) -> str:
 
 class RyanairConnector:
     name = "ryanair"
+    bulk = True
 
     def __init__(self, client: PoliteClient | None = None) -> None:
         self.client = client or PoliteClient(cache_ttl_s=6 * 3600)

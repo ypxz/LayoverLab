@@ -9,6 +9,29 @@ from layoverlab.db.models import Airport, AirportCluster, Base, Fare, GroundLink
 
 
 @pytest.fixture()
+def polite_client(tmp_path, monkeypatch):
+    monkeypatch.setenv("HTTP_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("CRAWL_MIN_INTERVAL_S", "0")
+    from layoverlab.connectors.http import PoliteClient
+    from layoverlab.settings import get_settings
+
+    get_settings.cache_clear()
+    yield PoliteClient()
+    get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _reset_breaker():
+    from layoverlab.connectors import http
+
+    http._breaker.failures.clear()
+    http._breaker.opened_at.clear()
+    yield
+    http._breaker.failures.clear()
+    http._breaker.opened_at.clear()
+
+
+@pytest.fixture()
 def session() -> Session:
     engine = create_engine(
         "sqlite://",

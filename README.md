@@ -87,9 +87,18 @@ All config is environment variables — copy `.env.example` to `.env` and edit. 
 | `DATABASE_URL` | postgres on `localhost:5433` | SQLAlchemy URL; SQLite works for single-worker dev |
 | `CRAWL_ENABLED` | `true` | Global kill-switch for all outbound crawling |
 | `CRAWL_MIN_INTERVAL_S` | `2.0` | Per-domain minimum seconds between requests |
+| `CRAWL_BREAKER_COOLDOWN_S` | `300` | Per-domain circuit breaker cooldown before a half-open probe |
 | `HTTP_CACHE_DIR` | `.cache/http` | On-disk response cache (avoids duplicate hits) |
-| `TRAVELPAYOUTS_TOKEN` | *(empty = disabled)* | Free token → all-airline cached fares ([travelpayouts.com](https://www.travelpayouts.com)) |
+| `CRAWL_DAILY_BUDGET` | `500` | Max outbound requests per domain per UTC day; exhausted domains pause until midnight UTC |
+| `SCHED_TICK_S` | `60` | Seconds between refresh-scheduler ticks in the crawler worker |
+| `CRAWLER_CONCURRENCY` | `2` | Parallel job coroutines in the worker (Postgres only; SQLite runs 1) |
+| `TRAVELPAYOUTS_TOKEN` | *(empty = disabled)* | Free token → all-airline cached fares ([travelpayouts.com](https://www.travelpayouts.com), ~5-minute signup, biggest coverage win) |
+| `TEQUILA_API_KEY` | *(empty = disabled)* | Kiwi Tequila free tier — all airlines + self-transfer pricing ([tequila.kiwi.com](https://tequila.kiwi.com)) |
+| `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` | *(empty = disabled)* | Amadeus Self-Service free test quota — exact verification prices ([developers.amadeus.com](https://developers.amadeus.com)) |
+| `WIZZ_ENABLED` | `true` | Wizz Air public timetable connector (no key) |
+| `EASYJET_ENABLED` | `true` | easyJet lowest-daily-fares connector (no key) |
 | `GF_ENABLED` | `false` | Google Flights verification connector (stub) |
+| `FIXTURE_CONNECTOR` | `false` | Deterministic synthetic fare connector for tests and the local fixture stack |
 | `FARE_TTL_HOURS` | `48` | Cached fares expire after this |
 | `API_CORS_ORIGINS` | `http://localhost:3000` | Allowed frontend origins |
 | `SEARCH_STREAM_MAX_S` | `60` | Max seconds a `/api/search` SSE stream stays open waiting for fresh fares |
@@ -108,7 +117,20 @@ cd server && pytest -q       # 20 tests: engine scenarios, connectors (recorded 
 cd web && npm test           # vitest: SSE parser, formatting
 ```
 
-CI (`.github/workflows/ci.yml`) runs ruff + pytest + vitest + `next build` on every push/PR.
+CI (`.github/workflows/ci.yml`) runs ruff + pytest + vitest + `next build` on every push/PR, plus the route-matrix harness against a fixture stack.
+
+### Route-matrix harness
+
+Exercises a matrix of route classes (LCC intra-EU, cluster pair, ground corridor, long-haul, domestic, island, round trip, stopover-beats-direct) against a running API and prints a markdown report (sample: [`docs/route_matrix_report.sample.md`](docs/route_matrix_report.sample.md)).
+
+```bash
+cd server
+export DATABASE_URL="sqlite:///layoverlab.sqlite3" FIXTURE_CONNECTOR=true CRAWL_ENABLED=false
+alembic upgrade head
+uvicorn layoverlab.api.app:app --port 8000 &          # fixture stack
+python scripts/route_matrix.py --fixture --month 2026-09   # seeds DB, asserts baselines, exit code for CI
+python scripts/route_matrix.py --live                       # real connectors, low volume, observations only
+```
 
 ## Project layout
 
@@ -121,7 +143,7 @@ server/
     db/           SQLAlchemy models, session, Alembic migrations
     engine/       fare-slice graph, top-K search, round-trips, warnings, live verification
     seeds/        airports/clusters/ground-corridors/routes loaders + curated CSVs
-  scripts/        crawl_once.py (manual smoke crawl)
+  scripts/        crawl_once.py (manual smoke crawl), route_matrix.py (route-class QA harness)
   tests/
 web/
   src/app/        pages: search+results (SSE streaming), /r/[id] permalinks
