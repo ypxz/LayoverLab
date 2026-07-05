@@ -1,12 +1,15 @@
 """Load an in-memory fare slice for a search window and expose graph edges."""
 
+import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from layoverlab.db.models import Airport, Fare, GroundLink
+
+log = logging.getLogger(__name__)
 
 CLUSTER_TRANSFER_MINUTES = 120
 CLUSTER_TRANSFER_CENTS = 2000  # €20 default intra-cluster transfer (bus/train)
@@ -60,11 +63,24 @@ def load_slice(session: Session, date_from: date, date_to: date, extra_days: int
     fslice = FareSlice(date_from=date_from, horizon_days=horizon_days)
 
     # cheapest fare per (origin, dest, day) across sources
+    now = datetime.now(timezone.utc)
     best: dict[tuple[str, str, date], Fare] = {}
     fares = session.execute(
         select(Fare).where(Fare.dep_date >= date_from, Fare.dep_date <= horizon_end)
     ).scalars()
     for fare in fares:
+        expires = fare.expires_at
+        if expires is not None:
+            if expires.tzinfo is None:
+                expires = expires.replace(tzinfo=timezone.utc)
+            if expires <= now:
+                continue
+        if fare.currency != "EUR":
+            log.warning(
+                "skipping non-EUR fare %s->%s %s (%s %s from %s)",
+                fare.origin, fare.dest, fare.dep_date, fare.min_price_cents, fare.currency, fare.source,
+            )
+            continue
         key = (fare.origin, fare.dest, fare.dep_date)
         if key not in best or fare.min_price_cents < best[key].min_price_cents:
             best[key] = fare

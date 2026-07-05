@@ -230,6 +230,16 @@
             "title": "Round Trip",
             "type": "boolean"
           },
+          "sort": {
+            "default": "cheapest",
+            "enum": [
+              "cheapest",
+              "fastest",
+              "best"
+            ],
+            "title": "Sort",
+            "type": "string"
+          },
           "stop_max_days": {
             "default": 7,
             "maximum": 30.0,
