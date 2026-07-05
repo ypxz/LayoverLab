@@ -87,6 +87,31 @@ def test_hub_fanout_capped_at_8_priority_30(session):
     assert all(j.priority == PRIORITY_HUB == 30 for j in hub_jobs)
 
 
+def test_upsert_job_tolerates_and_prevents_duplicate_active_jobs(session):
+    """Regression for BUG-1: concurrent enqueues must not duplicate active jobs or break searches."""
+    from sqlalchemy.exc import IntegrityError
+
+    from layoverlab.crawler.prioritizer import _upsert_job
+
+    assert _upsert_job(session, "ryanair", "BER", "ALC", D, priority=100) is True
+    # a second enqueue bumps instead of duplicating
+    assert _upsert_job(session, "ryanair", "BER", "ALC", D, priority=30) is False
+    jobs = session.execute(select(CrawlJob)).scalars().all()
+    assert len(jobs) == 1 and jobs[0].priority == 100
+    # the partial unique index rejects a raced duplicate insert
+    session.add(
+        CrawlJob(connector="ryanair", origin="BER", dest="ALC", month=D, priority=1, status="pending")
+    )
+    with pytest.raises(IntegrityError):
+        session.flush()
+    session.rollback()
+    # a done row does not block re-enqueueing
+    assert _upsert_job(session, "ryanair", "BER", "ALC", D, priority=100) is True
+    session.execute(select(CrawlJob)).scalars().one().status = "done"
+    session.flush()
+    assert _upsert_job(session, "ryanair", "BER", "ALC", D, priority=50) is True
+
+
 def test_direct_pair_and_cluster_claimed_before_hub_fanout(session):
     add_airport(session, "BER", "DE")
     add_airport(session, "ALC", "ES", cluster="ALC_C")
@@ -233,8 +258,10 @@ async def test_connector_disabled_skips_quietly(session, registry):
 
 def test_get_stats(session):
     now = utcnow()
-    for status in ["pending", "pending", "running", "done", "dead"]:
-        session.add(CrawlJob(connector="ryanair", origin="BER", dest="ALC", month=D,
+    # duplicate active (pending/error) rows per pair are impossible since uq_crawl_jobs_active
+    for dest, status in [("ALC", "pending"), ("BCN", "pending"), ("ALC", "running"),
+                         ("ALC", "done"), ("ALC", "dead")]:
+        session.add(CrawlJob(connector="ryanair", origin="BER", dest=dest, month=D,
                              priority=10, status=status, run_after=now,
                              created_at=now - timedelta(minutes=30), updated_at=now))
     session.add(CrawlJob(connector="travelpayouts", origin="BER", dest="ALC", month=D,

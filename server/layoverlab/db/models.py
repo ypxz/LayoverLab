@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -73,6 +73,18 @@ class Fare(Base):
 
 class CrawlJob(Base):
     __tablename__ = "crawl_jobs"
+    __table_args__ = (
+        Index(
+            "uq_crawl_jobs_active",
+            "connector",
+            "origin",
+            "dest",
+            "month",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'error')"),
+            sqlite_where=text("status IN ('pending', 'error')"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     connector: Mapped[str] = mapped_column(String(32))

@@ -4,6 +4,7 @@ import logging
 from datetime import date, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from layoverlab.connectors.coverage import bulk_sources, sources_for_route
@@ -59,26 +60,46 @@ def _candidate_hubs(session: Session, origins: list[str], dests: list[str]) -> l
     return ranked[:MAX_HUBS]
 
 
-def _upsert_job(session: Session, connector: str, origin: str, dest: str, month: date, priority: int) -> bool:
-    existing = session.execute(
-        select(CrawlJob).where(
-            CrawlJob.connector == connector,
-            CrawlJob.origin == origin,
-            CrawlJob.dest == dest,
-            CrawlJob.month == month,
-            CrawlJob.status.in_(["pending", "error"]),
+def _active_job(session: Session, connector: str, origin: str, dest: str, month: date) -> CrawlJob | None:
+    return (
+        session.execute(
+            select(CrawlJob)
+            .where(
+                CrawlJob.connector == connector,
+                CrawlJob.origin == origin,
+                CrawlJob.dest == dest,
+                CrawlJob.month == month,
+                CrawlJob.status.in_(["pending", "error"]),
+            )
+            .order_by(CrawlJob.id)
         )
-    ).scalar_one_or_none()
+        .scalars()
+        .first()
+    )
+
+
+def _upsert_job(session: Session, connector: str, origin: str, dest: str, month: date, priority: int) -> bool:
+    existing = _active_job(session, connector, origin, dest, month)
     if existing:
         existing.priority = max(existing.priority, priority)
         existing.status = "pending"
         return False
+    nested = session.begin_nested()
     session.add(
         CrawlJob(
             connector=connector, origin=origin, dest=dest, month=month,
             priority=priority, status="pending", run_after=utcnow(),
         )
     )
+    try:
+        session.flush()
+    except IntegrityError:
+        nested.rollback()
+        existing = _active_job(session, connector, origin, dest, month)
+        if existing:
+            existing.priority = max(existing.priority, priority)
+            existing.status = "pending"
+        return False
     return True
 
 
