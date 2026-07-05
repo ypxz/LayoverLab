@@ -1,0 +1,86 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      run_load:
+        description: "Also run the k6 load test"
+        type: boolean
+        default: true
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -e "server[dev]"
+      - name: Engine benchmarks (fails when p95@50k > 1200ms)
+        run: |
+          python benchmarks/bench_engine.py --sizes 10000,50000,200000 --searches 20 \
+            --assert-p95 50000:1200 --out benchmarks/results.nightly.json
+        working-directory: server
+      - name: Benchmark summary
+        if: always()
+        run: |
+          {
+            echo "### Engine benchmark results"
+            echo '```json'
+            cat server/benchmarks/results.nightly.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: server/benchmarks/results.nightly.json
+          if-no-files-found: ignore
+
+  load:
+    # manual dispatch only: never load-test from scheduled or PR pipelines
+    if: github.event_name == 'workflow_dispatch' && inputs.run_load
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -e "server[dev]"
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+      - name: Start fixture stack
+        run: |
+          nohup bash e2e/scripts/start-api.sh > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8000/api/health && break
+            sleep 1
+          done
+        env:
+          E2E_PYTHON: python
+      - name: k6 load test (20 VUs, 60s)
+        run: k6 run e2e/load/search_sse.js --summary-export k6-summary.json
+      - name: Load summary
+        if: always()
+        run: |
+          {
+            echo "### k6 load test summary"
+            echo '```json'
+            cat k6-summary.json || echo "no summary"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          if-no-files-found: ignore
