@@ -3,7 +3,12 @@
 import logging
 
 from layoverlab.db.session import session_scope
-from layoverlab.seeds.loaders import load_airports, load_clusters, load_ground_links, load_routes
+from layoverlab.seeds.loaders import (
+    load_airports,
+    load_clusters,
+    load_ground_links,
+    load_routes_auto,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("seeds")
@@ -17,7 +22,7 @@ def main() -> None:
         log.info("airports: %d", n)
         n = load_ground_links(session)
         log.info("ground links (directed): %d", n)
-        n = load_routes(session)
+        n = load_routes_auto(session)
         log.info("routes: %d", n)
     log.info("done")
 

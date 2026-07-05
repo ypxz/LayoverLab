@@ -1,7 +1,14 @@
 from sqlalchemy import select
 
 from layoverlab.db.models import Airport, GroundLink, Route
-from layoverlab.seeds.loaders import load_airports, load_clusters, load_ground_links, load_routes
+from layoverlab.seeds.loaders import (
+    load_airports,
+    load_clusters,
+    load_ground_links,
+    load_routes,
+    load_routes_auto,
+    load_routes_jonty,
+)
 
 AIRPORTS_CSV = """id,ident,type,name,latitude_deg,longitude_deg,elevation_ft,continent,iso_country,iso_region,municipality,scheduled_service,icao_code,iata_code,gps_code,local_code,home_link,wikipedia_link,keywords
 1,EDDB,large_airport,Berlin Brandenburg,52.36,13.5,157,EU,DE,DE-BB,Berlin,yes,EDDB,BER,EDDB,,,,
@@ -15,6 +22,22 @@ FR,4296,BER,123,STN,789,,0,738
 U2,2297,BER,123,ALC,456,,0,320
 ZZ,999,QQQ,1,WWW,2,,0,738
 """
+
+TZ_CSV = """"icao","iata","name","city","subd","country","elevation","lat","lon","tz","lid"
+"EDDB","BER","Berlin Brandenburg","Berlin","","DE",157,52.36,13.5,"Europe/Berlin",""
+"LEAL","ALC","Alicante","Alicante","","ES",142,38.28,-0.55,"Europe/Madrid",""
+"""
+
+JONTY_JSON = """{
+  "BER": {"iata": "BER", "routes": [
+    {"iata": "ALC", "km": 1800, "min": 170,
+     "carriers": [{"iata": "FR", "name": "Ryanair"}, {"iata": "U2", "name": "easyJet"}]},
+    {"iata": "STN", "km": 930, "min": 105, "carriers": [{"iata": "FR", "name": "Ryanair"}]},
+    {"iata": "QQQ", "km": 1, "min": 1, "carriers": [{"iata": "ZZ", "name": "Nobody"}]},
+    {"iata": "BER", "km": 0, "min": 0, "carriers": []}
+  ]},
+  "ALC": {"iata": "ALC", "routes": [{"iata": "BER", "km": 1800, "min": 175, "carriers": []}]}
+}"""
 
 
 def test_seed_pipeline(session):
@@ -42,3 +65,40 @@ def test_seed_pipeline(session):
     assert len(session.execute(select(Airport)).scalars().all()) == 3
     assert len(session.execute(select(Route)).scalars().all()) == 2
     assert len(session.execute(select(GroundLink)).scalars().all()) == 0
+
+
+def test_airport_tz_join(session):
+    load_clusters(session)
+    load_airports(session, csv_text=AIRPORTS_CSV, tz_csv_text=TZ_CSV)
+    assert session.get(Airport, "BER").tz == "Europe/Berlin"
+    assert session.get(Airport, "ALC").tz == "Europe/Madrid"
+    assert session.get(Airport, "STN").tz is None  # missing in tz dataset -> null
+
+    load_airports(session, csv_text=AIRPORTS_CSV, tz_csv_text=TZ_CSV)  # idempotent
+    assert len(session.execute(select(Airport)).scalars().all()) == 3
+
+
+def test_load_routes_jonty(session, monkeypatch):
+    load_clusters(session)
+    load_airports(session, csv_text=AIRPORTS_CSV)
+    n = load_routes_jonty(session, json_text=JONTY_JSON)
+    assert n == 3  # QQQ + self-loop dropped
+    ber_alc = session.get(Route, ("BER", "ALC"))
+    assert ber_alc.carriers == ["FR", "U2"]
+    assert ber_alc.frequency_score == 2.0
+    assert session.get(Route, ("ALC", "BER")).carriers == ["??"]  # carrier-less route kept
+
+    load_routes_jonty(session, json_text=JONTY_JSON)  # idempotent
+    assert len(session.execute(select(Route)).scalars().all()) == 3
+
+    monkeypatch.setenv("ROUTES_SOURCE", "jonty")
+    monkeypatch.setattr(
+        "layoverlab.seeds.loaders._download", lambda url, timeout=120.0: JONTY_JSON
+    )
+    assert load_routes_auto(session) == 3
+
+    monkeypatch.setenv("ROUTES_SOURCE", "openflights")
+    monkeypatch.setattr(
+        "layoverlab.seeds.loaders._download", lambda url, timeout=120.0: ROUTES_DAT
+    )
+    assert load_routes_auto(session) == 2
