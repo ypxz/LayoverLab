@@ -17,6 +17,8 @@ export interface Leg {
   source: string;
   deep_link: string | null;
   fetched_at: string;
+  dep_time?: string | null;
+  arr_time?: string | null;
 }
 
 export interface Stopover {
@@ -46,6 +48,11 @@ export interface SearchParams {
   stop_max_days: number;
   max_stops: number;
   top_k: number;
+}
+
+export interface DoneMeta {
+  crawl_pending: boolean;
+  searched_pairs_covered: boolean;
 }
 
 export interface SSEEvent {
