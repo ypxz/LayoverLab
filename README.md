@@ -12,7 +12,7 @@ LayoverLab finds creative cheapest routes between two airports in a flexible dat
 
 Results stream in live: instant candidates from the fare cache, then the top routes are **re-verified against live prices** before you book. Every itinerary gets honest warnings (self-transfer risk, baggage re-check, visa hints) and a shareable permalink.
 
-> **Status: v0.1 fully working.** All core systems shipped and smoke-tested with live data (real Ryanair fares, end-to-end search, streaming UI). See [Roadmap](#roadmap--agent-handoff) for what's next.
+> **Status: v0.2 shipped.** Multi-source connectors (Ryanair, Travelpayouts, Google Flights verification, Wizz/easyJet + graceful-disable Tequila/Amadeus), demand-driven smart crawler, live SSE search with streamed updates, real-time verification with buffer enforcement, engine v2 (Pareto search, round trips, diversity), overhauled UI, expanded worldwide seed data, and a full QA gate (route matrix, Playwright E2E, benchmarks, load & chaos tests). See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
