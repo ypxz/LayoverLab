@@ -11,10 +11,16 @@ commit, so concurrent claimers could double-claim the same job.
 
 import asyncio
 import logging
+import time
+
+from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from layoverlab.connectors.base import load_default_connectors
 from layoverlab.connectors.coverage import bulk_sources, log_disabled_sources
 from layoverlab.crawler.budget import allowed_connectors, domain_for_connector
+from layoverlab.crawler.heartbeat import beat
 from layoverlab.crawler.scheduler import enqueue_refresh_jobs
 from layoverlab.crawler.service import claim_next_job, run_job
 from layoverlab.db.session import get_engine, session_scope
@@ -24,6 +30,32 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("crawler")
 
 IDLE_SLEEP_S = 5.0
+MIGRATION_POLL_S = 2.0
+REQUIRED_TABLES = frozenset({"crawl_jobs", "request_budgets", "route_coverage", "fares"})
+
+
+def wait_for_migrations(
+    engine: Engine, timeout_s: float | None = None, poll_s: float = MIGRATION_POLL_S
+) -> None:
+    """Block until the API's `alembic upgrade head` has created the tables the worker
+    needs (bounded wait), so a first boot never crash-loops on UndefinedTable."""
+    timeout_s = get_settings().worker_db_wait_s if timeout_s is None else timeout_s
+    deadline = time.monotonic() + timeout_s
+    while True:
+        missing: set[str] | str
+        try:
+            missing = REQUIRED_TABLES - set(inspect(engine).get_table_names())
+            if not missing:
+                return
+        except SQLAlchemyError as exc:
+            missing = f"db not reachable: {exc.__class__.__name__}"
+        if time.monotonic() >= deadline:
+            raise TimeoutError(
+                f"database schema not ready after {timeout_s:.0f}s (missing: {missing}); "
+                "is the api container running `alembic upgrade head`?"
+            )
+        log.info("waiting for migrations (%s)", missing)
+        time.sleep(min(poll_s, max(0.0, deadline - time.monotonic())))
 
 
 def _domain_groups() -> list[list[str]]:
@@ -57,6 +89,7 @@ async def process_one(connectors: list[str] | None = None) -> bool:
 async def _job_worker(name: str, connectors: list[str] | None) -> None:
     settings = get_settings()
     while True:
+        _beat_safe(name)
         if not settings.crawl_enabled:
             await asyncio.sleep(IDLE_SLEEP_S)
             continue
@@ -67,6 +100,14 @@ async def _job_worker(name: str, connectors: list[str] | None) -> None:
             worked = False
         if not worked:
             await asyncio.sleep(IDLE_SLEEP_S)
+
+
+def _beat_safe(name: str) -> None:
+    try:
+        with session_scope() as session:
+            beat(session)
+    except Exception:  # noqa: BLE001 - liveness must never kill the loop
+        log.exception("[%s] heartbeat failed", name)
 
 
 async def _scheduler_tick_loop() -> None:
@@ -83,6 +124,7 @@ async def _scheduler_tick_loop() -> None:
 
 
 async def main() -> None:
+    wait_for_migrations(get_engine())
     load_default_connectors()
     log_disabled_sources()
     settings = get_settings()

@@ -14,4 +14,8 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   done
 fi
 
+if [ "${RUN_SEEDS:-false}" = "true" ]; then
+  python -m layoverlab.seeds.load_all
+fi
+
 exec "$@"

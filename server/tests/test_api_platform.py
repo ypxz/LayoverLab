@@ -175,7 +175,9 @@ def test_sse_warm_cache_no_update(client):
     names = [e for e, _ in events]
     assert names == ["candidates", "verified", "done"]
     meta = json.loads(events[-1][1])["meta"]
-    assert meta == {"crawl_pending": False, "searched_pairs_covered": True}
+    assert meta["crawl_pending"] is False
+    assert meta["searched_pairs_covered"] is True
+    assert meta["zero_results_reason"] is None
 
 
 def test_sse_update_emitted_on_improvement(client, monkeypatch):
@@ -218,4 +220,6 @@ def test_sse_cold_route_times_out_and_closes(client, monkeypatch):
     names = [e for e, _ in events]
     assert names == ["candidates", "verified", "done"]
     meta = json.loads(events[-1][1])["meta"]
-    assert meta == {"crawl_pending": True, "searched_pairs_covered": False}
+    assert meta["crawl_pending"] is True
+    assert meta["searched_pairs_covered"] is False
+    assert meta["zero_results_reason"] is None

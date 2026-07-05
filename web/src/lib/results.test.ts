@@ -14,7 +14,9 @@ import {
   sortItineraries,
   tripDays,
   warningSeverity,
+  zeroResultsMessage,
 } from "@/lib/results";
+import { STR } from "@/lib/strings";
 
 function leg(origin: string, dest: string, dep_date: string, price = 5000): Leg {
   return {
@@ -228,5 +230,54 @@ describe("searchReducer", () => {
     state = searchReducer(state, { type: "clearFlash" });
     expect(state.flashKeys).toEqual([]);
     expect(state.updatedNotice).toBe(true);
+  });
+});
+
+describe("zero-result reasons", () => {
+  it("done records zero_results_reason and worker_alive from meta", () => {
+    const state = searchReducer(
+      { ...INITIAL_SEARCH_STATE, phase: "streaming" },
+      {
+        type: "done",
+        meta: {
+          crawl_pending: false,
+          searched_pairs_covered: true,
+          worker_alive: false,
+          zero_results_reason: "worker_down",
+        },
+      },
+    );
+    expect(state.zeroReason).toBe("worker_down");
+    expect(state.workerAlive).toBe(false);
+  });
+
+  it("done without the new meta fields defaults to null (backwards compatible)", () => {
+    const state = searchReducer(
+      { ...INITIAL_SEARCH_STATE, phase: "streaming" },
+      { type: "done", meta: { crawl_pending: false, searched_pairs_covered: true } },
+    );
+    expect(state.zeroReason).toBeNull();
+    expect(state.workerAlive).toBeNull();
+  });
+
+  it("zeroResultsMessage maps each reason to a distinct human message", () => {
+    const reasons = [
+      "no_coverage",
+      "crawl_pending",
+      "crawl_disabled",
+      "worker_down",
+      "sources_erroring",
+    ] as const;
+    const messages = reasons.map((r) => zeroResultsMessage(r));
+    expect(new Set(messages).size).toBe(reasons.length);
+  });
+
+  it("zeroResultsMessage maps reasons to copy and falls back to the generic message", () => {
+    expect(zeroResultsMessage(null)).toBe(STR.status.noResults);
+    expect(zeroResultsMessage("no_coverage")).toBe(STR.status.noResults);
+    expect(zeroResultsMessage("worker_down")).toBe(STR.status.zeroWorkerDown);
+    expect(zeroResultsMessage("crawl_pending")).toBe(STR.status.zeroCrawlPending);
+    expect(zeroResultsMessage("crawl_disabled")).toBe(STR.status.zeroCrawlDisabled);
+    expect(zeroResultsMessage("sources_erroring")).toBe(STR.status.zeroSourcesErroring);
   });
 });

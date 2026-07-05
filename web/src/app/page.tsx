@@ -21,6 +21,7 @@ import {
   searchReducer,
   sortItineraries,
   type SortMode,
+  zeroResultsMessage,
 } from "@/lib/results";
 import { paramsToQuery, queryToParams } from "@/lib/searchState";
 import { STR } from "@/lib/strings";
@@ -84,6 +85,7 @@ function HomeInner() {
     abortRef.current = controller;
     dispatch({ type: "start" });
     setStartedAt(Date.now());
+    let doneReceived = false;
     try {
       await searchStream(
         params,
@@ -97,12 +99,14 @@ function HomeInner() {
           } else if (event === "error") {
             dispatch({ type: "error" });
           } else if (event === "done") {
+            doneReceived = true;
             const meta = (payload as { meta?: DoneMeta } | null)?.meta ?? null;
             dispatch({ type: "done", meta });
           }
         },
         controller.signal,
       );
+      if (!doneReceived && !controller.signal.aborted) dispatch({ type: "error" });
     } catch {
       if (!controller.signal.aborted) dispatch({ type: "error" });
     }
@@ -228,8 +232,11 @@ function HomeInner() {
         )}
 
         {state.phase === "done" && state.results.length === 0 && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
-            {STR.status.noResults}
+          <div
+            data-testid="zero-results"
+            className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400"
+          >
+            {zeroResultsMessage(state.zeroReason)}
           </div>
         )}
 

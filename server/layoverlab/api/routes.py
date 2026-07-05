@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from layoverlab.api import metrics
+from layoverlab.crawler.heartbeat import last_heartbeat_age_s, worker_alive
 from layoverlab.crawler.prioritizer import enqueue_for_search
-from layoverlab.db.models import Airport, Fare, ItinerarySnapshot
+from layoverlab.db.models import Airport, CrawlJob, Fare, ItinerarySnapshot
 from layoverlab.db.session import get_db, session_scope
 from layoverlab.engine.models import Itinerary, SearchParams
 from layoverlab.engine.search import search
@@ -35,8 +36,17 @@ class ItineraryId(BaseModel):
 
 
 @router.get("/health", tags=["ops"])
-def health() -> dict:
-    return {"status": "ok"}
+def health(db: Session = Depends(get_db)) -> dict:
+    worker: dict = {"alive": None, "last_heartbeat_age_s": None}
+    try:
+        age = last_heartbeat_age_s(db)
+        worker = {
+            "alive": worker_alive(db),
+            "last_heartbeat_age_s": round(age, 1) if age is not None else None,
+        }
+    except Exception:  # noqa: BLE001 - health must not 500 on a half-migrated DB
+        log.exception("worker heartbeat check failed")
+    return {"status": "ok", "worker": worker}
 
 
 @router.get("/airports", response_model=list[AirportOut], tags=["airports"])
@@ -113,6 +123,52 @@ async def _wait_for_fares(origin: str, dest: str, month: date, timeout_s: float)
     await wait_for_pair(get_sessionmaker(), origin, dest, month, timeout_s=timeout_s)
 
 
+def _worker_alive() -> bool | None:
+    """None means unknown (heartbeat table missing / DB error) — never fails the stream."""
+    try:
+        with session_scope() as session:
+            return worker_alive(session)
+    except Exception:  # noqa: BLE001
+        log.exception("worker heartbeat check failed")
+        return None
+
+
+def _pair_sources_erroring(params: SearchParams) -> bool:
+    """True when the direct pair's crawl jobs all ended in error/dead (no successes)."""
+    try:
+        with session_scope() as session:
+            month = params.date_from.replace(day=1)
+            statuses = set(
+                session.execute(
+                    select(CrawlJob.status).where(
+                        CrawlJob.origin == params.origin,
+                        CrawlJob.dest == params.dest,
+                        CrawlJob.month == month,
+                    )
+                ).scalars()
+            )
+        return bool(statuses) and statuses <= {"error", "dead"}
+    except Exception:  # noqa: BLE001
+        log.exception("crawl job status check failed")
+        return False
+
+
+def _zero_results_reason(
+    params: SearchParams, crawl_pending: bool, alive: bool | None
+) -> str:
+    """Why a finished stream has zero results: crawl_disabled | worker_down |
+    sources_erroring | crawl_pending | no_coverage."""
+    if not get_settings().crawl_enabled:
+        return "crawl_disabled"
+    if alive is False:
+        return "worker_down"
+    if _pair_sources_erroring(params):
+        return "sources_erroring"
+    if crawl_pending:
+        return "crawl_pending"
+    return "no_coverage"
+
+
 def _improved(new: list[Itinerary], best_total: int | None, best_count: int) -> bool:
     if not new:
         return False
@@ -155,8 +211,10 @@ async def search_endpoint(
 
         crawl_pending = False
         covered = True
+        have_results = False
         try:
             candidates = await anyio.to_thread.run_sync(_run_search, params)
+            have_results = len(candidates) > 0
             yield emit("candidates", json.dumps([i.model_dump(mode="json") for i in candidates]))
             verified = await verify_top(candidates, n=5)
             yield emit("verified", json.dumps([i.model_dump(mode="json") for i in verified]))
@@ -179,6 +237,7 @@ async def search_endpoint(
                         break
                     fresh = await anyio.to_thread.run_sync(_rerun_search, params)
                     improved = _improved(fresh, best_total, best_count)
+                    have_results = have_results or len(fresh) > 0
                     if improved:
                         best_total = min(i.total_cents for i in fresh)
                         best_count = len(fresh)
@@ -192,7 +251,16 @@ async def search_endpoint(
         except Exception:  # noqa: BLE001 - stream errors to the client instead of dropping the SSE
             log.exception("search failed")
             yield emit("error", json.dumps({"message": "search failed"}))
-        meta = {"crawl_pending": crawl_pending, "searched_pairs_covered": covered}
+        alive = await anyio.to_thread.run_sync(_worker_alive)
+        reason = None
+        if not have_results:
+            reason = await anyio.to_thread.run_sync(_zero_results_reason, params, crawl_pending, alive)
+        meta = {
+            "crawl_pending": crawl_pending,
+            "searched_pairs_covered": covered,
+            "worker_alive": alive,
+            "zero_results_reason": reason,
+        }
         yield emit("done", json.dumps({"meta": meta}))
         metrics.sse_searches_completed_total.inc()
         log.info(

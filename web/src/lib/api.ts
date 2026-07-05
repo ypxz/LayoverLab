@@ -50,9 +50,18 @@ export interface SearchParams {
   top_k: number;
 }
 
+export type ZeroResultsReason =
+  | "no_coverage"
+  | "crawl_pending"
+  | "crawl_disabled"
+  | "worker_down"
+  | "sources_erroring";
+
 export interface DoneMeta {
   crawl_pending: boolean;
   searched_pairs_covered: boolean;
+  worker_alive?: boolean | null;
+  zero_results_reason?: ZeroResultsReason | null;
 }
 
 export interface SSEEvent {
@@ -77,10 +86,16 @@ export function parseSSE(buffer: string): { events: SSEEvent[]; rest: string } {
   return { events, rest };
 }
 
+/** Client-side watchdog: the server caps streams at SEARCH_STREAM_MAX_S (60s default),
+ * so a healthy stream always ends well before this. Guards against a stalled
+ * connection leaving the UI spinning forever. */
+export const STREAM_WATCHDOG_MS = 90_000;
+
 export async function searchStream(
   params: SearchParams,
   onEvent: (event: string, payload: unknown) => void,
   signal?: AbortSignal,
+  watchdogMs: number = STREAM_WATCHDOG_MS,
 ): Promise<void> {
   const resp = await fetch(`${API_BASE}/search`, {
     method: "POST",
@@ -90,23 +105,30 @@ export async function searchStream(
   });
   if (!resp.ok || !resp.body) throw new Error(`search failed: ${resp.status}`);
   const reader = resp.body.getReader();
+  const watchdog = setTimeout(() => {
+    void reader.cancel().catch(() => undefined);
+  }, watchdogMs);
   const decoder = new TextDecoder();
   let buffer = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const { events, rest } = parseSSE(buffer);
-    buffer = rest;
-    for (const evt of events) {
-      let payload: unknown = null;
-      try {
-        payload = JSON.parse(evt.data);
-      } catch {
-        payload = evt.data;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const { events, rest } = parseSSE(buffer);
+      buffer = rest;
+      for (const evt of events) {
+        let payload: unknown = null;
+        try {
+          payload = JSON.parse(evt.data);
+        } catch {
+          payload = evt.data;
+        }
+        onEvent(evt.event, payload);
       }
-      onEvent(evt.event, payload);
     }
+  } finally {
+    clearTimeout(watchdog);
   }
 }
 

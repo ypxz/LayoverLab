@@ -1,6 +1,8 @@
 from sqlalchemy import select
 
 from layoverlab.db.models import Airport, GroundLink, Route
+from layoverlab.seeds import load_all as load_all_module
+from layoverlab.seeds.load_all import is_seeded
 from layoverlab.seeds.loaders import (
     load_airports,
     load_clusters,
@@ -102,3 +104,42 @@ def test_load_routes_jonty(session, monkeypatch):
         "layoverlab.seeds.loaders._download", lambda url, timeout=120.0: ROUTES_DAT
     )
     assert load_routes_auto(session) == 2
+
+
+def _fake_scope(session):
+    from contextlib import contextmanager
+
+    @contextmanager
+    def scope():
+        yield session
+
+    return scope
+
+
+def test_load_all_skips_when_already_seeded(session, monkeypatch):
+    assert is_seeded(session) is False
+    load_clusters(session)
+    load_airports(session, csv_text=AIRPORTS_CSV)
+    assert is_seeded(session) is False  # routes still empty
+    load_routes(session, dat_text=ROUTES_DAT)
+    assert is_seeded(session) is True
+
+    monkeypatch.setattr(load_all_module, "session_scope", _fake_scope(session))
+    calls: list[str] = []
+    for name in ("load_clusters", "load_airports", "load_ground_links", "load_routes_auto"):
+        monkeypatch.setattr(load_all_module, name, lambda s, _n=name: calls.append(_n) or 1)
+
+    assert load_all_module.run() is False  # already seeded -> no loader runs, no downloads
+    assert calls == []
+
+    assert load_all_module.run(force=True) is True
+    assert calls == ["load_clusters", "load_airports", "load_ground_links", "load_routes_auto"]
+
+
+def test_load_all_runs_on_empty_db(session, monkeypatch):
+    monkeypatch.setattr(load_all_module, "session_scope", _fake_scope(session))
+    calls: list[str] = []
+    for name in ("load_clusters", "load_airports", "load_ground_links", "load_routes_auto"):
+        monkeypatch.setattr(load_all_module, name, lambda s, _n=name: calls.append(_n) or 1)
+    assert load_all_module.run() is True
+    assert len(calls) == 4

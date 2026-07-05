@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     search_stream_max_s: int = 60
     search_stream_poll_s: float = 5.0
 
+    # worker liveness
+    worker_db_wait_s: int = 180
+    worker_heartbeat_stale_s: float = 60.0
+
     # rate limiting
     rate_limit_enabled: bool = True
     rate_search_per_min: int = 10

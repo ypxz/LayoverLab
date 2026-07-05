@@ -1,4 +1,5 @@
-import type { DoneMeta, Itinerary } from "@/lib/api";
+import type { DoneMeta, Itinerary, ZeroResultsReason } from "@/lib/api";
+import { STR } from "@/lib/strings";
 
 /** Stable identity for an itinerary: its route shape (legs), independent of price. */
 export function itineraryKey(itin: Itinerary): string {
@@ -136,6 +137,22 @@ export function flagEmoji(countryCode: string): string {
   );
 }
 
+/** Human message for a stream that finished with zero results. */
+export function zeroResultsMessage(reason: ZeroResultsReason | null): string {
+  switch (reason) {
+    case "crawl_pending":
+      return STR.status.zeroCrawlPending;
+    case "crawl_disabled":
+      return STR.status.zeroCrawlDisabled;
+    case "worker_down":
+      return STR.status.zeroWorkerDown;
+    case "sources_erroring":
+      return STR.status.zeroSourcesErroring;
+    default:
+      return STR.status.noResults;
+  }
+}
+
 export type SearchPhase = "idle" | "searching" | "verifying" | "streaming" | "done" | "error";
 
 export interface SearchState {
@@ -146,6 +163,8 @@ export interface SearchState {
   /** True right after an `update` event improved the visible results. */
   updatedNotice: boolean;
   crawlPending: boolean;
+  zeroReason: ZeroResultsReason | null;
+  workerAlive: boolean | null;
 }
 
 export const INITIAL_SEARCH_STATE: SearchState = {
@@ -154,6 +173,8 @@ export const INITIAL_SEARCH_STATE: SearchState = {
   flashKeys: [],
   updatedNotice: false,
   crawlPending: false,
+  zeroReason: null,
+  workerAlive: null,
 };
 
 export type SearchAction =
@@ -193,6 +214,8 @@ export function searchReducer(state: SearchState, action: SearchAction): SearchS
         ...state,
         phase: state.phase === "error" ? state.phase : "done",
         crawlPending: action.meta?.crawl_pending ?? false,
+        zeroReason: action.meta?.zero_results_reason ?? null,
+        workerAlive: action.meta?.worker_alive ?? null,
       };
     case "error":
       return { ...state, phase: "error" };
