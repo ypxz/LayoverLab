@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     travelpayouts_token: str = ""
     gf_enabled: bool = False
+    gf_min_interval_s: float = 5.0
     tequila_api_key: str = ""
     amadeus_client_id: str = ""
     amadeus_client_secret: str = ""
@@ -29,6 +30,8 @@ class Settings(BaseSettings):
 
     # engine defaults
     fare_ttl_hours: int = 48
+    verify_top_k: int = 5
+    self_transfer_min_h: float = 3.0
 
     # streaming search
     search_stream_max_s: int = 60
