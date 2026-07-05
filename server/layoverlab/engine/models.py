@@ -37,6 +37,8 @@ class Leg(BaseModel):
     source: str
     deep_link: str | None = None
     fetched_at: datetime
+    dep_time: datetime | None = None  # local departure time, resolved during verification
+    arr_time: datetime | None = None  # local arrival time, resolved during verification
 
 
 class Stopover(BaseModel):
